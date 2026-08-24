@@ -18,17 +18,28 @@
 		saveFestival,
 		savePreferences
 	} from '$lib/storage';
-	import type { Festival, FestivalDay, Lane, ScheduleItem, UserPreferences } from '$lib/types';
+	import type {
+		Festival,
+		FestivalDay,
+		Lane,
+		LaneType,
+		ScheduleItem,
+		UserPreferences
+	} from '$lib/types';
 
 	const copy = {
 		timetable: { ja: 'タイムテーブル', en: 'Timetable' },
 		edit: { ja: '編集', en: 'Edit' },
-		view: { ja: '閲覧', en: 'View' },
 		add: { ja: '項目を追加', en: 'Add item(s)' },
 		search: { ja: 'アーティスト検索', en: 'Search artists' },
 		favorite: { ja: 'お気に入り', en: 'Favorites' },
 		import: { ja: 'インポート', en: 'Import' },
 		export: { ja: 'エクスポート', en: 'Export' },
+		share: { ja: '共有', en: 'Share' },
+		colorMode: { ja: '色分け', en: 'Block colors' },
+		settings: { ja: '表示設定', en: 'Display settings' },
+		snap: { ja: '時間刻み', en: 'Time step' },
+		zoom: { ja: '縦間隔', en: 'Vertical spacing' },
 		newFestival: { ja: '新しいフェス', en: 'New timetable' },
 		copyTemplate: { ja: 'サンプルをコピー', en: 'Copy bundled sample' },
 		saved: { ja: '保存済み', en: 'Saved locally' },
@@ -37,6 +48,16 @@
 		full: { ja: 'レーンを維持', en: 'Keep lanes' },
 		addDay: { ja: '日を追加', en: 'Add day' },
 		addLane: { ja: 'レーンを追加', en: 'Add lane' },
+		laneName: { ja: 'レーン名', en: 'Lane name' },
+		laneType: { ja: 'レーン種別', en: 'Lane type' },
+		stage: { ja: 'ステージ', en: 'Stage' },
+		tokuten: { ja: '特典会', en: 'Meet & greet' },
+		event: { ja: 'イベント', en: 'Event' },
+		venue: { ja: '会場', en: 'Venue' },
+		venueUrl: { ja: '会場 URL', en: 'Venue URL' },
+		opening: { ja: '開場時刻', en: 'Opening time' },
+		color: { ja: '色', en: 'Color' },
+		editLane: { ja: 'レーンを編集', en: 'Edit lane' },
 		info: { ja: 'レーン情報', en: 'Lane information' },
 		related: { ja: '関連する出演・特典会', en: 'Related appearances' },
 		close: { ja: '閉じる', en: 'Close' },
@@ -65,7 +86,7 @@
 	const defaults: UserPreferences = {
 		language: 'ja',
 		snapMinutes: 5,
-		timeZoom: 54,
+		timeZoom: 180,
 		laneWidth: 152,
 		compactFavorites: false,
 		blockColorMode: 'full'
@@ -77,6 +98,7 @@
 	let favoriteFilter = $state<FavoriteFilter>(0);
 	let searchQuery = $state('');
 	let editMode = $state(false);
+	let settingsOpen = $state(false);
 	let isLoading = $state(true);
 	let addMode = $state(false);
 	let addLaneId = $state('');
@@ -84,6 +106,8 @@
 	let creating = $state<CreateState>(null);
 	let editingItemId = $state<string | null>(null);
 	let editDraft = $state<ScheduleItem | null>(null);
+	let laneDraft = $state<Lane | null>(null);
+	let laneDraftIsNew = $state(false);
 	let infoLaneId = $state<string | null>(null);
 	let relatedModalItemId = $state<string | null>(null);
 	let importOpen = $state(false);
@@ -170,6 +194,17 @@
 	function parseMinute(value: string): number {
 		const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
 		return match ? Number(match[1]) * 60 + Number(match[2]) : 0;
+	}
+	function updateLaneOpening(value: string): void {
+		if (!laneDraft) return;
+		if (!value.trim()) {
+			laneDraft.openingMinute = undefined;
+			return;
+		}
+		if (/^\d{1,2}:\d{2}$/.test(value.trim())) laneDraft.openingMinute = parseMinute(value);
+	}
+	function laneTypeLabel(type: LaneType): string {
+		return t(type);
 	}
 	function minuteToY(minute: number): number {
 		return ((minute - gridRange.startMinute) / 60) * preferences.timeZoom;
@@ -407,16 +442,49 @@
 		editDraft = null;
 	}
 	function addLane(): void {
+		if (!editMode || !day) return;
+		laneDraftIsNew = true;
+		laneDraft = {
+			id: newId(),
+			name: `新しいレーン ${lanes.length + 1}`,
+			type: 'event',
+			color: ['#ffad0a', '#ef6a56', '#5c9ed6', '#65a989'][lanes.length % 4]
+		};
+	}
+	function openLaneEditor(lane: Lane): void {
+		if (!editMode) return;
+		laneDraftIsNew = false;
+		laneDraft = { ...lane };
+		infoLaneId = null;
+	}
+	function closeLaneEditor(): void {
+		laneDraft = null;
+		laneDraftIsNew = false;
+	}
+	function saveLaneDraft(): void {
+		if (!editMode || !laneDraft) return;
+		const draft = {
+			...laneDraft,
+			name: laneDraft.name.trim(),
+			venueName: laneDraft.venueName?.trim() || undefined,
+			venueUrl: laneDraft.venueUrl?.trim() || undefined,
+			openingMinute: laneDraft.openingMinute,
+			color: laneDraft.color || '#a8adb5'
+		};
+		if (!draft.name) {
+			flash('レーン名を入力してください');
+			return;
+		}
 		updateFestival((next) => {
-			const target = next.days.find((candidate) => candidate.id === selectedDayId);
-			if (target)
-				target.lanes.push({
-					id: newId(),
-					name: `新しいレーン ${target.lanes.length + 1}`,
-					type: 'event',
-					color: ['#ffad0a', '#ef6a56', '#5c9ed6', '#65a989'][target.lanes.length % 4]
-				});
+			const targetDay = next.days.find((candidate) => candidate.id === selectedDayId);
+			if (!targetDay) return;
+			if (laneDraftIsNew) targetDay.lanes.push(draft);
+			else {
+				const target = targetDay.lanes.find((lane) => lane.id === draft.id);
+				if (target) Object.assign(target, draft);
+			}
 		});
+		closeLaneEditor();
 	}
 	function addDay(): void {
 		if (!day) return;
@@ -561,7 +629,10 @@
 		let timer: number | undefined;
 		void (async () => {
 			const storedPreferences = await loadPreferences();
-			if (storedPreferences) preferences = { ...defaults, ...storedPreferences };
+			if (storedPreferences) {
+				preferences = { ...defaults, ...storedPreferences };
+				if (storedPreferences.timeZoom === 54) preferences.timeZoom = defaults.timeZoom;
+			}
 			const stored = await listFestivals();
 			const storedLast = stored.find((candidate) => candidate.id === preferences.lastFestivalId);
 			if (storedLast) festival = storedLast;
@@ -648,13 +719,6 @@
 			<section class="toolbar" aria-label="Timetable controls">
 				<div class="toolbar-primary">
 					<button
-						class:active={editMode}
-						class="mode-button"
-						onclick={() => {
-							editMode = !editMode;
-							addMode = false;
-						}}>{editMode ? '✎ ' + t('edit') : '◉ ' + t('view')}</button
-					><button
 						class="quiet-button history-button"
 						aria-label={t('undo')}
 						title={t('undo')}
@@ -666,11 +730,39 @@
 						title={t('redo')}
 						disabled={!redoStack.length}
 						onclick={redo}>↷</button
-					><button class="primary-button" onclick={startAdd}>＋ {t('add')}</button
-					>{#if editMode}<button class="quiet-button" onclick={addLane}>＋ {t('addLane')}</button
-						>{/if}
+					>{#if editMode}<button class="primary-button" onclick={startAdd}>＋ {t('add')}</button
+						><button class="quiet-button" onclick={addLane}>＋ {t('addLane')}</button>{/if}
 				</div>
 				<div class="toolbar-secondary">
+					<div class="favorite-control" aria-label={t('favorite')}>
+						<span class="filter-label">♥ <span class="toolbar-label">{t('favorite')}</span></span>
+						<div class="filter-buttons">
+							<button class:active={favoriteFilter === 0} onclick={() => setFavoriteFilter(0)}
+								>{t('all')}</button
+							><button class:active={favoriteFilter === 1} onclick={() => setFavoriteFilter(1)}
+								>♥1+</button
+							><button class:active={favoriteFilter === 2} onclick={() => setFavoriteFilter(2)}
+								>♥2+</button
+							><button class:active={favoriteFilter === 3} onclick={() => setFavoriteFilter(3)}
+								>♥3</button
+							>
+						</div>
+						{#if favoriteFilter > 0}<div class="layout-buttons">
+								<button
+									class:active={!preferences.compactFavorites}
+									onclick={() => {
+										preferences.compactFavorites = false;
+										void savePreferences(preferences);
+									}}>{t('full')}</button
+								><button
+									class:active={preferences.compactFavorites}
+									onclick={() => {
+										preferences.compactFavorites = true;
+										void savePreferences(preferences);
+									}}>{t('compact')}</button
+								>
+							</div>{/if}
+					</div>
 					<label class="search-field"
 						><span aria-hidden="true">⌕</span><input
 							aria-label={t('search')}
@@ -678,35 +770,68 @@
 							value={searchQuery}
 							oninput={(event) => (searchQuery = (event.currentTarget as HTMLInputElement).value)}
 						/><kbd>/</kbd></label
-					><select
-						aria-label="Snap interval"
-						bind:value={preferences.snapMinutes}
-						onchange={() => void savePreferences(preferences)}
-						><option value={5}>5m snap</option><option value={10}>10m snap</option><option
-							value={15}>15m snap</option
-						></select
-					><select
-						aria-label="Time zoom"
-						bind:value={preferences.timeZoom}
-						onchange={() => void savePreferences(preferences)}
-						><option value={42}>Compact</option><option value={54}>Comfort</option><option
-							value={68}>Large</option
-						></select
+					><div class="settings-menu">
+						<button
+							class="settings-button"
+							class:active={settingsOpen}
+							aria-expanded={settingsOpen}
+							aria-label={t('settings')}
+							title={t('settings')}
+							onclick={() => (settingsOpen = !settingsOpen)}>⚙ <span class="toolbar-label">{t('settings')}</span></button
+						>{#if settingsOpen}<div class="settings-panel">
+							<label class="settings-row"
+								><span>{t('snap')}</span><select
+									aria-label={t('snap')}
+									bind:value={preferences.snapMinutes}
+									onchange={() => void savePreferences(preferences)}
+									><option value={5}>{preferences.language === 'ja' ? '5分' : '5min'}</option><option
+										value={10}>{preferences.language === 'ja' ? '10分' : '10min'}</option><option
+										value={15}>{preferences.language === 'ja' ? '15分' : '15min'}</option
+									></select
+								></label
+							><label class="settings-row"
+								><span>{t('zoom')}</span><div class="settings-range"
+									><span aria-hidden="true">↕</span><input
+										type="range"
+										min="72"
+										max="240"
+										step="12"
+										aria-label={t('zoom')}
+										bind:value={preferences.timeZoom}
+										onchange={() => void savePreferences(preferences)}
+									/><output>{preferences.timeZoom}</output></div
+								></label
+							><button
+								class="settings-choice"
+								class:active={preferences.blockColorMode === 'partial'}
+								aria-pressed={preferences.blockColorMode === 'partial'}
+								onclick={() => {
+									preferences.blockColorMode =
+										preferences.blockColorMode === 'full' ? 'partial' : 'full';
+									void savePreferences(preferences);
+								}}>◐ <span>{t('colorMode')}</span><strong
+									>{preferences.blockColorMode === 'partial' ? '部分' : '全体'}</strong
+								></button
+						></div>{/if}
+					</div
 					><button
-						class="icon-button"
-						class:active={preferences.blockColorMode === 'partial'}
-						aria-label="Toggle block color mode"
+						class="edit-toggle"
+						class:active={editMode}
+						aria-pressed={editMode}
+						aria-label="Timetable editing mode"
+						title="Timetable editing mode"
 						onclick={() => {
-							preferences.blockColorMode =
-								preferences.blockColorMode === 'full' ? 'partial' : 'full';
-							void savePreferences(preferences);
-						}}>◐</button
-					>
-					<div class="transfer-actions">
+							editMode = !editMode;
+							addMode = false;
+							if (!editMode) closeLaneEditor();
+						}}><span class="toolbar-label">{t('edit')}</span><span class="edit-toggle-icon" aria-hidden="true">✎</span><span
+							class="edit-toggle-track"
+							aria-hidden="true"><span></span></span></button
+					><div class="transfer-actions">
 						<button class="quiet-button" onclick={() => (importOpen = true)}>{t('import')}</button
 						><button class="quiet-button" onclick={downloadExport}>{t('export')}</button><button
 							class="quiet-button share-button"
-							onclick={shareExport}>↗</button
+							onclick={shareExport}>{t('share')}</button
 						>
 					</div>
 				</div>
@@ -722,35 +847,6 @@
 							: 's'}</span
 					><span class="warning-hint">Items remain visible; edit mode can resolve them.</span>
 				</section>{/if}
-			<section class="filter-bar" aria-label={t('favorite')}>
-				<div class="filter-label">♥ {t('favorite')}</div>
-				<div class="filter-buttons">
-					<button class:active={favoriteFilter === 0} onclick={() => setFavoriteFilter(0)}
-						>{t('all')}</button
-					><button class:active={favoriteFilter === 1} onclick={() => setFavoriteFilter(1)}
-						>♥1+</button
-					><button class:active={favoriteFilter === 2} onclick={() => setFavoriteFilter(2)}
-						>♥2+</button
-					><button class:active={favoriteFilter === 3} onclick={() => setFavoriteFilter(3)}
-						>♥3</button
-					>
-				</div>
-				{#if favoriteFilter > 0}<div class="layout-buttons">
-						<button
-							class:active={!preferences.compactFavorites}
-							onclick={() => {
-								preferences.compactFavorites = false;
-								void savePreferences(preferences);
-							}}>{t('full')}</button
-						><button
-							class:active={preferences.compactFavorites}
-							onclick={() => {
-								preferences.compactFavorites = true;
-								void savePreferences(preferences);
-							}}>{t('compact')}</button
-						>
-					</div>{/if}
-			</section>
 			<div class="grid-meta">
 				<span
 					>{day?.date ?? ''} · {formatMinute(gridRange.startMinute)}–{formatMinute(
@@ -769,13 +865,26 @@
 								class="lane-header"
 								style={laneStyle(lane)}
 							>
-								<div class="lane-color-swatch"></div>
-								<strong>{lane.name}</strong><button
+								<strong>{lane.name}</strong>
+								{#if editMode}
+									<button
+										class="lane-edit-button"
+										aria-label={`${t('edit')} ${lane.name}`}
+										onclick={() => openLaneEditor(lane)}
+									>
+										✎
+									</button>
+								{/if}
+								<button
+									class="lane-info-button"
 									aria-label={`${lane.name} ${t('info')}`}
-									onclick={() => (infoLaneId = lane.id)}>ⓘ</button
-								>{#if lane.openingMinute !== undefined}<small
-										>OPEN {formatMinute(lane.openingMinute)}</small
-									>{/if}
+									onclick={() => (infoLaneId = lane.id)}
+								>
+									ⓘ
+								</button>
+								{#if lane.openingMinute !== undefined}
+									<small>OPEN {formatMinute(lane.openingMinute)}</small>
+								{/if}
 							</div>{/each}{/if}
 					<div class="time-axis" style={`height:${gridHeight}px`}>
 						{#each timeTicks as tick (tick)}<span style={`top:${minuteToY(tick)}px`}
@@ -977,6 +1086,100 @@
 			</div>
 		</div>
 	</div>{/if}
+
+{#if laneDraft}
+	<div
+		class="modal-backdrop"
+		role="presentation"
+		onclick={(event) => {
+			if (event.target === event.currentTarget) closeLaneEditor();
+		}}
+	>
+		<div
+			class="modal lane-editor-modal"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="lane-editor-title"
+		>
+			<div class="modal-heading">
+				<div>
+					<p class="eyebrow">{laneDraftIsNew ? 'ADD LANE' : 'EDIT LANE'}</p>
+					<h2 id="lane-editor-title">{laneDraft.name || t('editLane')}</h2>
+				</div>
+				<button class="icon-button" aria-label={t('close')} onclick={closeLaneEditor}>×</button>
+			</div>
+			<div class="form-grid lane-form-grid">
+				<label>
+					{t('laneName')}
+					<input bind:value={laneDraft.name} />
+				</label>
+				<label>
+					{t('laneType')}
+					<select
+						value={laneDraft.type}
+						onchange={(event) =>
+							(laneDraft!.type = (event.currentTarget as HTMLSelectElement).value as LaneType)}
+					>
+						<option value="stage">{laneTypeLabel('stage')}</option>
+						<option value="tokuten">{laneTypeLabel('tokuten')}</option>
+						<option value="event">{laneTypeLabel('event')}</option>
+					</select>
+				</label>
+				<label>
+					{t('venue')}
+					<input bind:value={laneDraft.venueName} />
+				</label>
+				<label>
+					{t('opening')}
+					<input
+						value={laneDraft.openingMinute === undefined ? '' : formatMinute(laneDraft.openingMinute)}
+						placeholder="10:00"
+						oninput={(event) =>
+							updateLaneOpening((event.currentTarget as HTMLInputElement).value)}
+					/>
+				</label>
+				<label>
+					{t('venueUrl')}
+					<input type="url" bind:value={laneDraft.venueUrl} />
+				</label>
+				<label class="color-field">
+					{t('color')}
+					<span>
+						<input
+							class="lane-color-input"
+							type="color"
+							value={laneDraft.color ?? '#a8adb5'}
+							onchange={(event) =>
+								(laneDraft!.color = (event.currentTarget as HTMLInputElement).value)}
+						/>
+						<code>{laneDraft.color ?? '#a8adb5'}</code>
+					</span>
+				</label>
+			</div>
+			{#if !laneDraftIsNew && laneDraft.type === 'stage'}
+				<div class="related-section">
+					<h3>{t('related')}</h3>
+					{#if relatedTokutenItems(laneDraft).length}
+						{#each relatedTokutenItems(laneDraft) as item (item.id)}
+							<div class="related-row related-row-static">
+								<span>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span>
+								<strong>{item.artistLabel}</strong>
+								<small>{laneForItem(item)?.name}</small>
+							</div>
+						{/each}
+					{:else}
+						<p class="empty-copy">関連する特典会はありません。</p>
+					{/if}
+				</div>
+			{/if}
+			<div class="modal-actions">
+				<span></span>
+				<button class="quiet-button" onclick={closeLaneEditor}>{t('cancel')}</button>
+				<button class="primary-button" onclick={saveLaneDraft}>{t('apply')}</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 {#if infoLane}<div
 		class="modal-backdrop"
@@ -1200,7 +1403,7 @@
 	.toolbar-secondary,
 	.festival-strip,
 	.festival-actions,
-	.filter-bar,
+	.favorite-control,
 	.filter-buttons,
 	.layout-buttons,
 	.modal-actions,
@@ -1349,7 +1552,8 @@
 	.icon-button,
 	.outline-button,
 	.quiet-button,
-	.mode-button,
+	.edit-toggle,
+	.settings-button,
 	.primary-button,
 	.danger-button,
 	.file-button {
@@ -1363,9 +1567,121 @@
 		background: var(--panel);
 		color: var(--ink);
 	}
+	.toolbar-label {
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.01em;
+		white-space: nowrap;
+	}
+	.zoom-control {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 36px;
+		padding: 0 10px;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--panel);
+		color: var(--muted);
+	}
+	.zoom-control span {
+		font-size: 16px;
+		line-height: 1;
+	}
+	.zoom-control .toolbar-label {
+		font-size: 11px;
+		line-height: 1;
+	}
+	.zoom-control input {
+		width: 96px;
+		accent-color: var(--teal);
+	}
+	.settings-menu {
+		position: relative;
+	}
+	.settings-button {
+		padding: 0 11px;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--panel);
+		color: var(--muted);
+	}
+	.settings-button:hover,
+	.settings-button.active {
+		border-color: var(--teal);
+		background: #e3f0ed;
+		color: var(--teal);
+	}
+	.settings-panel {
+		position: absolute;
+		top: calc(100% + 8px);
+		right: 0;
+		z-index: 25;
+		display: grid;
+		width: 238px;
+		gap: 13px;
+		padding: 14px;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--panel);
+		box-shadow: 0 12px 28px rgba(20, 30, 30, 0.18);
+	}
+	.settings-row {
+		display: grid;
+		gap: 6px;
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 800;
+	}
+	.settings-row select {
+		width: 100%;
+		min-height: 32px;
+	}
+	.settings-range {
+		display: grid;
+		grid-template-columns: 16px 1fr auto;
+		gap: 7px;
+		align-items: center;
+		color: var(--muted);
+	}
+	.settings-range input {
+		width: 100%;
+		accent-color: var(--teal);
+	}
+	.settings-range output {
+		min-width: 28px;
+		color: var(--ink);
+		font:
+			10px ui-monospace,
+			monospace;
+		text-align: right;
+	}
+	.settings-choice {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		width: 100%;
+		padding: 9px 10px;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: #f2f1ed;
+		color: var(--muted);
+		font-size: 12px;
+		text-align: left;
+	}
+	.settings-choice strong {
+		margin-left: auto;
+		color: var(--ink);
+		font-size: 10px;
+	}
+	.settings-choice.active {
+		border-color: #b5d0cc;
+		background: #e3f0ed;
+		color: var(--teal);
+	}
 	.icon-button,
 	.quiet-button,
-	.mode-button,
 	.outline-button {
 		padding: 0 11px;
 		border: 1px solid transparent;
@@ -1374,9 +1690,9 @@
 	}
 	.icon-button:hover,
 	.quiet-button:hover,
-	.mode-button:hover,
 	.outline-button:hover,
-	.icon-button.active {
+	.icon-button.active,
+	.edit-toggle:hover {
 		border-color: var(--line);
 		background: #ebe9e4;
 		color: var(--ink);
@@ -1386,14 +1702,49 @@
 		background: var(--panel);
 		color: var(--ink);
 	}
-	.mode-button {
-		border-color: var(--line);
+	.edit-toggle {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		padding: 0 9px;
+		border: 1px solid var(--line);
+		border-radius: 999px;
 		background: var(--panel);
-		color: var(--teal);
+		color: var(--muted);
 	}
-	.mode-button.active {
+	.edit-toggle.active {
 		border-color: var(--teal);
 		background: #e3f0ed;
+		color: var(--teal);
+	}
+	.edit-toggle-icon {
+		font-size: 14px;
+		line-height: 1;
+	}
+	.edit-toggle-track {
+		position: relative;
+		width: 30px;
+		height: 18px;
+		border-radius: 999px;
+		background: #c8ceca;
+		transition: background 140ms ease;
+	}
+	.edit-toggle-track span {
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: white;
+		box-shadow: 0 1px 3px rgba(20, 30, 30, 0.24);
+		transition: transform 140ms ease;
+	}
+	.edit-toggle.active .edit-toggle-track {
+		background: var(--teal);
+	}
+	.edit-toggle.active .edit-toggle-track span {
+		transform: translateX(12px);
 	}
 	.primary-button {
 		padding: 0 15px;
@@ -1448,15 +1799,16 @@
 		color: #8e6d20;
 		font-size: 11px;
 	}
-	.filter-bar {
-		gap: 10px;
-		margin: 8px 0 13px;
-		padding: 8px;
+	.favorite-control {
+		gap: 5px;
+		min-height: 36px;
+		padding: 3px 5px;
 		border: 1px solid var(--line);
+		border-radius: 4px;
 		background: #ebe9e4;
 	}
 	.filter-label {
-		padding: 0 7px;
+		padding: 0 4px;
 		color: #a94846;
 		font-size: 12px;
 		font-weight: 900;
@@ -1483,9 +1835,9 @@
 		box-shadow: 0 1px 4px rgba(20, 30, 30, 0.08);
 	}
 	.layout-buttons {
-		margin-left: auto;
+		margin-left: 4px;
 		border-left: 1px solid #d4d1ca;
-		padding-left: 8px;
+		padding-left: 4px;
 	}
 	.grid-meta {
 		display: flex;
@@ -1496,7 +1848,7 @@
 	}
 	.timetable-scroller {
 		position: relative;
-		max-height: min(72vh, 900px);
+		max-height: min(72vh, 540px);
 		overflow: auto;
 		border: 1px solid #c9c9c2;
 		background: #e7e7e4;
@@ -1552,14 +1904,39 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
+	.lane-header strong,
+	.lane-name-input {
+		min-width: 0;
+		flex: 1;
+	}
+	.lane-name-input {
+		align-self: stretch;
+		padding: 3px 5px;
+		border: 1px solid #7c9b9c;
+		border-radius: 3px;
+		background: rgba(255, 255, 255, 0.82);
+		color: inherit;
+		font: inherit;
+	}
 	.lane-header button {
 		flex: 0 0 auto;
-		margin-left: auto;
+		margin-left: 0;
 		padding: 0;
 		border: 0;
 		background: transparent;
 		color: #42545a;
 		font-size: 15px;
+	}
+	.lane-header .lane-edit-button {
+		margin-left: auto;
+		font-size: 13px;
+	}
+	.lane-header button:hover {
+		color: var(--teal);
+	}
+	.lane-header button:disabled {
+		cursor: not-allowed;
+		opacity: 0.38;
 	}
 	.lane-header small {
 		position: absolute;
@@ -1568,13 +1945,6 @@
 		color: #53676b;
 		font-size: 9px;
 		font-weight: 800;
-	}
-	.lane-color-swatch {
-		flex: 0 0 auto;
-		width: 7px;
-		height: 24px;
-		border-radius: 2px;
-		background: var(--lane-color);
 	}
 	.time-axis {
 		position: sticky;
@@ -1857,6 +2227,7 @@
 		font-weight: 800;
 	}
 	.form-grid input,
+	.form-grid select,
 	.bulk-list-label textarea,
 	.transfer-modal textarea {
 		width: 100%;
@@ -1866,6 +2237,26 @@
 		background: white;
 		color: var(--ink);
 		font-size: 13px;
+	}
+	.lane-form-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+	.color-field > span {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.lane-color-input {
+		width: 42px !important;
+		height: 36px;
+		padding: 3px !important;
+		cursor: pointer;
+	}
+	.color-field code {
+		color: var(--muted);
+		font:
+			11px ui-monospace,
+			monospace;
 	}
 	.favorite-editor {
 		display: flex;
@@ -1968,6 +2359,13 @@
 	.related-row:hover {
 		border-color: var(--line);
 		background: #f4f2ed;
+	}
+	.related-row-static {
+		cursor: default;
+	}
+	.related-row-static:hover {
+		border-color: transparent;
+		background: transparent;
 	}
 	.related-row span,
 	.related-row small {
@@ -2077,8 +2475,20 @@
 			width: auto;
 			flex: 1;
 		}
-		.toolbar-secondary select {
+		.toolbar-secondary select,
+		.toolbar-secondary .zoom-control {
 			flex: 1;
+		}
+		.toolbar-label {
+			display: none;
+		}
+		.settings-panel {
+			position: fixed;
+			top: auto;
+			right: 10px;
+			bottom: 74px;
+			left: 10px;
+			width: auto;
 		}
 		.transfer-actions {
 			margin-left: auto;
@@ -2086,7 +2496,7 @@
 		.warning-hint {
 			display: none;
 		}
-		.filter-bar {
+		.favorite-control {
 			overflow-x: auto;
 		}
 		.filter-label {
@@ -2099,7 +2509,7 @@
 			padding: 0 2px;
 		}
 		.timetable-scroller {
-			max-height: calc(100vh - 300px);
+			max-height: min(calc(100vh - 300px), 540px);
 		}
 		.schedule-grid {
 			grid-template-columns: 54px repeat(var(--grid-columns), var(--lane-width));
