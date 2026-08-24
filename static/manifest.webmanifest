@@ -1,0 +1,11 @@
+{
+	"name": "Live-Fes Timetable",
+	"short_name": "Live-Fes",
+	"description": "A local-first festival timetable scheduler.",
+	"start_url": ".",
+	"display": "standalone",
+	"background_color": "#f5f3ef",
+	"theme_color": "#f5f3ef",
+	"lang": "ja",
+	"icons": []
+}
