@@ -30,6 +30,7 @@
 	const copy = {
 		timetable: { ja: 'タイムテーブル', en: 'Timetable' },
 		edit: { ja: '編集', en: 'Edit' },
+		editTools: { ja: '編集ツール', en: 'Editing tools' },
 		add: { ja: '項目を追加', en: 'Add item(s)' },
 		search: { ja: 'アーティスト検索', en: 'Search artists' },
 		favorite: { ja: 'お気に入り', en: 'Favorites' },
@@ -59,7 +60,14 @@
 		color: { ja: '色', en: 'Color' },
 		editLane: { ja: 'レーンを編集', en: 'Edit lane' },
 		info: { ja: 'レーン情報', en: 'Lane information' },
-		related: { ja: '関連する出演・特典会', en: 'Related appearances' },
+		related: { ja: '関連するイベント', en: '関連するイベント' },
+		theme: { ja: 'ダークモード', en: 'ダークモード' },
+		lightTheme: { ja: 'ライトモード', en: 'ライトモード' },
+		duplicate: { ja: '複製', en: '複製' },
+		relatedLane: { ja: '追加先レーン', en: '追加先レーン' },
+		relatedTiming: { ja: '開始タイミング', en: '開始タイミング' },
+		afterEnd: { ja: '終演後', en: '終演後' },
+		custom: { ja: 'カスタム', en: 'カスタム' },
 		close: { ja: '閉じる', en: 'Close' },
 		cancel: { ja: 'キャンセル', en: 'Cancel' },
 		apply: { ja: '保存', en: 'Save' },
@@ -82,9 +90,19 @@
 	} | null;
 	type CreateState = { laneId: string; startMinute: number; currentMinute: number } | null;
 	type BulkRow = { id: string; artist: string; start: number; end: number };
+	type FestivalSettingsDraft = {
+		title: string;
+		timezone: string;
+		date: string;
+		displayStart: string;
+		displayEnd: string;
+	};
+	const relatedDelayOptions = [0, 5, 10, 15, 20] as const;
+	const customRelatedDelayOptions = Array.from({ length: 32 }, (_, index) => (index + 5) * 5);
 
 	const defaults: UserPreferences = {
 		language: 'ja',
+		theme: 'light',
 		snapMinutes: 5,
 		timeZoom: 180,
 		laneWidth: 152,
@@ -106,6 +124,10 @@
 	let creating = $state<CreateState>(null);
 	let editingItemId = $state<string | null>(null);
 	let editDraft = $state<ScheduleItem | null>(null);
+	let editingItemIsNew = $state(false);
+	let relatedLaneId = $state('');
+	let relatedDelay = $state('0');
+	let customRelatedDelay = $state(25);
 	let laneDraft = $state<Lane | null>(null);
 	let laneDraftIsNew = $state(false);
 	let infoLaneId = $state<string | null>(null);
@@ -117,6 +139,8 @@
 	let bulkStartText = $state('10:00');
 	let bulkLength = $state(15);
 	let bulkPreview = $state<BulkRow[]>([]);
+	let festivalSettingsOpen = $state(false);
+	let festivalSettingsDraft = $state<FestivalSettingsDraft | null>(null);
 	let toast = $state('');
 	let nowMinute = $state(0);
 	let undoStack = $state<Festival[]>([]);
@@ -124,12 +148,23 @@
 	let longPressTimer: number | undefined;
 	let scroller = $state<HTMLDivElement>();
 
+	$effect(() => {
+		document.documentElement.dataset.theme = preferences.theme;
+		return () => {
+			delete document.documentElement.dataset.theme;
+		};
+	});
+
 	const day = $derived(
 		festival.days.find((candidate) => candidate.id === selectedDayId) ?? festival.days[0]
 	);
 	const lanes = $derived(day?.lanes ?? []);
 	const items = $derived(day?.items ?? []);
-	const gridRange = $derived(computeGridRange(items, day?.openingMinute));
+	const automaticGridRange = $derived(computeGridRange(items, day?.openingMinute));
+	const gridRange = $derived({
+		startMinute: day?.displayStartMinute ?? automaticGridRange.startMinute,
+		endMinute: day?.displayEndMinute ?? automaticGridRange.endMinute
+	});
 	const searchNormalized = $derived(searchQuery.normalize('NFKC').trim().toLocaleLowerCase());
 	const favoriteItems = $derived(
 		favoriteFilter === 0 ? items : items.filter((item) => item.favoriteLevel >= favoriteFilter)
@@ -177,7 +212,11 @@
 		if (!creating) return null;
 		const start = Math.min(creating.startMinute, creating.currentMinute);
 		const end = Math.max(creating.startMinute, creating.currentMinute);
-		return { top: minuteToY(start), height: Math.max(22, minuteToY(end) - minuteToY(start)) };
+		return {
+			top: minuteToY(start),
+			height: Math.max(22, minuteToY(end) - minuteToY(start)),
+			duration: Math.max(preferences.snapMinutes, end - start)
+		};
 	});
 
 	function t(key: keyof typeof copy): string {
@@ -195,6 +234,64 @@
 		const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
 		return match ? Number(match[1]) * 60 + Number(match[2]) : 0;
 	}
+	function validDisplayMinute(value: string, maxHour: number): number | null {
+		const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+		if (!match) return null;
+		const hour = Number(match[1]);
+		const minute = Number(match[2]);
+		if (hour > maxHour || minute > 59 || (hour === maxHour && minute !== 0)) return null;
+		return hour * 60 + minute;
+	}
+	function openFestivalSettings(): void {
+		if (!day) return;
+		festivalSettingsDraft = {
+			title: festival.title,
+			timezone: festival.timezone,
+			date: day.date,
+			displayStart: formatMinute(day.displayStartMinute ?? automaticGridRange.startMinute),
+			displayEnd: formatMinute(day.displayEndMinute ?? automaticGridRange.endMinute)
+		};
+		festivalSettingsOpen = true;
+	}
+	function closeFestivalSettings(): void {
+		festivalSettingsOpen = false;
+		festivalSettingsDraft = null;
+	}
+	function saveFestivalSettings(): void {
+		if (!festivalSettingsDraft) return;
+		const startMinute = validDisplayMinute(festivalSettingsDraft.displayStart, 24);
+		const endMinute = validDisplayMinute(festivalSettingsDraft.displayEnd, 30);
+		const title = festivalSettingsDraft.title.trim();
+		const timezone = festivalSettingsDraft.timezone.trim();
+		if (!title) {
+			flash('フェス名を入力してください');
+			return;
+		}
+		if (!festivalSettingsDraft.date) {
+			flash('日付を入力してください');
+			return;
+		}
+		if (startMinute === null || endMinute === null || endMinute <= startMinute) {
+			flash('表示終了時刻は開始時刻より後の時刻（最大30:00）にしてください');
+			return;
+		}
+		try {
+			new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format();
+		} catch {
+			flash('有効なタイムゾーンを入力してください');
+			return;
+		}
+		updateFestival((next) => {
+			next.title = title;
+			next.timezone = timezone;
+			const targetDay = next.days.find((candidate) => candidate.id === selectedDayId);
+			if (!targetDay) return;
+			targetDay.date = festivalSettingsDraft!.date;
+			targetDay.displayStartMinute = startMinute;
+			targetDay.displayEndMinute = endMinute;
+		});
+		closeFestivalSettings();
+	}
 	function updateLaneOpening(value: string): void {
 		if (!laneDraft) return;
 		if (!value.trim()) {
@@ -204,7 +301,7 @@
 		if (/^\d{1,2}:\d{2}$/.test(value.trim())) laneDraft.openingMinute = parseMinute(value);
 	}
 	function laneTypeLabel(type: LaneType): string {
-		return t(type);
+		return copy[type].ja;
 	}
 	function minuteToY(minute: number): number {
 		return ((minute - gridRange.startMinute) / 60) * preferences.timeZoom;
@@ -240,8 +337,14 @@
 		const color = laneForItem(item)?.color ?? '#a8adb5';
 		return `top:${top}px;height:${height}px;--item-color:${color};--item-text:${readableTextColor(color)};`;
 	}
+	function copyHandleStyle(item: ScheduleItem): string {
+		const top = minuteToY(item.startMinute);
+		const height = Math.max(24, minuteToY(item.endMinute) - minuteToY(item.startMinute) - 4);
+		return `top:${top + height - 19}px;`;
+	}
 	function laneStyle(lane: Lane): string {
-		return `--lane-color:${lane.color ?? '#a8adb5'};`;
+		const color = lane.color ?? '#a8adb5';
+		return `--lane-color:${color};--lane-icon:${readableTextColor(color)};`;
 	}
 
 	function updateFestival(mutator: (next: Festival) => void): void {
@@ -315,10 +418,39 @@
 			if (target) target.favoriteLevel = cycleFavorite(target.favoriteLevel);
 		});
 	}
-	function openEditor(item: ScheduleItem): void {
+	function openEditor(item: ScheduleItem, isNew = false): void {
 		if (!editMode) return;
 		editingItemId = item.id;
 		editDraft = JSON.parse(JSON.stringify(item)) as ScheduleItem;
+		editingItemIsNew = isNew;
+		relatedLaneId = '';
+		relatedDelay = '0';
+		customRelatedDelay = 25;
+	}
+	function closeEditor(): void {
+		editingItemId = null;
+		editDraft = null;
+		editingItemIsNew = false;
+		relatedLaneId = '';
+	}
+	function duplicateItem(item: ScheduleItem): void {
+		if (!editMode) return;
+		const duration = item.endMinute - item.startMinute;
+		const duplicate: ScheduleItem = {
+			id: newId(),
+			laneId: item.laneId,
+			startMinute: item.endMinute,
+			endMinute: item.endMinute + duration,
+			artistLabel: '新しい項目',
+			subContent: '',
+			artistEntityIds: [],
+			favoriteLevel: 0,
+			pairedTokutenItemIds: []
+		};
+		updateFestival((next) =>
+			next.days.find((candidate) => candidate.id === selectedDayId)?.items.push(duplicate)
+		);
+		openEditor(duplicate, true);
 	}
 	function openRelated(item: ScheduleItem): void {
 		relatedModalItemId = item.id;
@@ -404,7 +536,7 @@
 			);
 			creating = null;
 			addMode = false;
-			openEditor(item);
+			openEditor(item, true);
 			return;
 		}
 		dragging = null;
@@ -422,14 +554,46 @@
 			return;
 		}
 		const draft = JSON.parse(JSON.stringify(editDraft)) as ScheduleItem;
+		const originalPairIds = items.find((item) => item.id === draft.id)?.pairedTokutenItemIds ?? [];
+		const relatedDelayMinutes =
+			relatedDelay === 'custom' ? customRelatedDelay : Number.parseInt(relatedDelay, 10);
+		const hasRelatedLane = editingItemIsNew && lanes.some((lane) => lane.id === relatedLaneId);
+		const relatedItem: ScheduleItem | null = hasRelatedLane
+			? {
+					id: newId(),
+					laneId: relatedLaneId,
+					startMinute: draft.endMinute + relatedDelayMinutes,
+					endMinute:
+						draft.endMinute + relatedDelayMinutes + (draft.endMinute - draft.startMinute),
+					artistLabel: draft.artistLabel || '新しい項目',
+					subContent: '',
+					artistEntityIds: [...draft.artistEntityIds],
+					favoriteLevel: 0,
+					pairedTokutenItemIds: [draft.id]
+				}
+			: null;
+		if (relatedItem && !draft.pairedTokutenItemIds.includes(relatedItem.id))
+			draft.pairedTokutenItemIds = [...draft.pairedTokutenItemIds, relatedItem.id];
 		updateFestival((next) => {
-			const target = next.days
-				.flatMap((candidate) => candidate.items)
-				.find((item) => item.id === draft.id);
+			const targetDay = next.days.find((candidate) => candidate.id === selectedDayId);
+			const target = targetDay?.items.find((item) => item.id === draft.id);
 			if (target) Object.assign(target, draft);
+			if (targetDay) {
+				for (const candidate of targetDay.items) {
+					if (candidate.id === draft.id) continue;
+					if (draft.pairedTokutenItemIds.includes(candidate.id)) {
+						if (!candidate.pairedTokutenItemIds.includes(draft.id))
+							candidate.pairedTokutenItemIds.push(draft.id);
+					} else if (originalPairIds.includes(candidate.id)) {
+						candidate.pairedTokutenItemIds = candidate.pairedTokutenItemIds.filter(
+							(id) => id !== draft.id
+						);
+					}
+				}
+			}
+			if (relatedItem && targetDay) targetDay.items.push(relatedItem);
 		});
-		editingItemId = null;
-		editDraft = null;
+		closeEditor();
 	}
 	function deleteItem(): void {
 		if (!editingItemId || !window.confirm('この項目を削除しますか？')) return;
@@ -438,8 +602,7 @@
 			for (const candidate of next.days)
 				candidate.items = candidate.items.filter((item) => item.id !== id);
 		});
-		editingItemId = null;
-		editDraft = null;
+		closeEditor();
 	}
 	function addLane(): void {
 		if (!editMode || !day) return;
@@ -494,6 +657,8 @@
 			id: newId(),
 			date: nextDate.toISOString().slice(0, 10),
 			openingMinute: day.openingMinute,
+			displayStartMinute: day.displayStartMinute,
+			displayEndMinute: day.displayEndMinute,
 			lanes: day.lanes.map((lane) => ({ ...lane, id: newId() })),
 			items: []
 		};
@@ -609,8 +774,7 @@
 			? current.filter((id) => id !== itemId)
 			: [...current, itemId];
 	}
-	function relatedTokutenItems(lane: Lane): ScheduleItem[] {
-		if (lane.type !== 'stage') return [];
+	function relatedEventItems(lane: Lane): ScheduleItem[] {
 		const ids: string[] = [];
 		for (const item of items.filter((candidate) => candidate.laneId === lane.id)) {
 			for (const relatedId of getRelatedItemIds(items, festival.artistDirectory, item.id))
@@ -618,11 +782,7 @@
 			for (const pairedId of item.pairedTokutenItemIds)
 				if (!ids.includes(pairedId)) ids.push(pairedId);
 		}
-		return items.filter(
-			(item) =>
-				ids.includes(item.id) &&
-				lanes.find((candidate) => candidate.id === item.laneId)?.type === 'tokuten'
-		);
+		return items.filter((item) => ids.includes(item.id));
 	}
 
 	onMount(() => {
@@ -679,7 +839,22 @@
 				</div>
 			</div>
 			<div class="header-actions">
-				<span class="save-state"><span class="save-dot"></span>{t('saved')}</span><button
+				<span class="save-state"><span class="save-dot"></span>{t('saved')}</span>
+				<button
+					class="icon-button theme-toggle"
+					class:active={preferences.theme === 'dark'}
+					aria-pressed={preferences.theme === 'dark'}
+					aria-label={preferences.theme === 'dark' ? t('lightTheme') : t('theme')}
+					title={preferences.theme === 'dark' ? t('lightTheme') : t('theme')}
+					onclick={() => {
+						preferences.theme = preferences.theme === 'dark' ? 'light' : 'dark';
+						void savePreferences(preferences);
+					}}
+				>
+					{preferences.theme === 'dark' ? '☀' : '◐'}
+					<span>{preferences.theme === 'dark' ? t('lightTheme') : t('theme')}</span>
+				</button>
+				<button
 					class="icon-button"
 					aria-label="日本語 / English"
 					onclick={() => {
@@ -717,23 +892,7 @@
 					>{/each}<button class="add-day" onclick={addDay}>＋ {t('addDay')}</button>
 			</nav>
 			<section class="toolbar" aria-label="Timetable controls">
-				<div class="toolbar-primary">
-					<button
-						class="quiet-button history-button"
-						aria-label={t('undo')}
-						title={t('undo')}
-						disabled={!undoStack.length}
-						onclick={undo}>↶</button
-					><button
-						class="quiet-button history-button"
-						aria-label={t('redo')}
-						title={t('redo')}
-						disabled={!redoStack.length}
-						onclick={redo}>↷</button
-					>{#if editMode}<button class="primary-button" onclick={startAdd}>＋ {t('add')}</button
-						><button class="quiet-button" onclick={addLane}>＋ {t('addLane')}</button>{/if}
-				</div>
-				<div class="toolbar-secondary">
+				<div class="browse-controls">
 					<div class="favorite-control" aria-label={t('favorite')}>
 						<span class="filter-label">♥ <span class="toolbar-label">{t('favorite')}</span></span>
 						<div class="filter-buttons">
@@ -813,21 +972,8 @@
 									>{preferences.blockColorMode === 'partial' ? '部分' : '全体'}</strong
 								></button
 						></div>{/if}
-					</div
-					><button
-						class="edit-toggle"
-						class:active={editMode}
-						aria-pressed={editMode}
-						aria-label="Timetable editing mode"
-						title="Timetable editing mode"
-						onclick={() => {
-							editMode = !editMode;
-							addMode = false;
-							if (!editMode) closeLaneEditor();
-						}}><span class="toolbar-label">{t('edit')}</span><span class="edit-toggle-icon" aria-hidden="true">✎</span><span
-							class="edit-toggle-track"
-							aria-hidden="true"><span></span></span></button
-					><div class="transfer-actions">
+					</div>
+					<div class="transfer-actions">
 						<button class="quiet-button" onclick={() => (importOpen = true)}>{t('import')}</button
 						><button class="quiet-button" onclick={downloadExport}>{t('export')}</button><button
 							class="quiet-button share-button"
@@ -835,6 +981,50 @@
 						>
 					</div>
 				</div>
+				<div class="edit-workspace">
+					<button
+						class="edit-toggle"
+						class:active={editMode}
+						aria-pressed={editMode}
+						aria-label="タイムテーブルを編集"
+						title="タイムテーブルを編集"
+						onclick={() => {
+							editMode = !editMode;
+							addMode = false;
+							if (!editMode) closeLaneEditor();
+						}}
+					>
+						<span class="toolbar-label">{t('edit')}</span>
+						<span class="edit-toggle-icon" aria-hidden="true">✎</span>
+						<span class="edit-toggle-track" aria-hidden="true"><span></span></span>
+					</button>
+				</div>
+				{#if editMode}
+					<div class="edit-commands" aria-label={t('editTools')}>
+						<span class="edit-workspace-label">{t('editTools')}</span>
+						<button class="outline-button" onclick={openFestivalSettings}>フェス設定</button>
+						<button
+							class="quiet-button history-button"
+							aria-label={t('undo')}
+							title={t('undo')}
+							disabled={!undoStack.length}
+							onclick={undo}
+						>
+							↶
+						</button>
+						<button
+							class="quiet-button history-button"
+							aria-label={t('redo')}
+							title={t('redo')}
+							disabled={!redoStack.length}
+							onclick={redo}
+						>
+							↷
+						</button>
+						<button class="primary-button" onclick={startAdd}>＋ {t('add')}</button>
+						<button class="primary-button" onclick={addLane}>＋ {t('addLane')}</button>
+					</div>
+				{/if}
 			</section>
 			{#if conflicts.sameLane.length || conflicts.sameArtist.length}<section
 					class="warning-bar"
@@ -910,7 +1100,8 @@
 									onpointerdown={(event) => beginCreate(event, addLaneId)}
 								>
 									<div class="grid-lines"></div>
-									{#each compactItemsForColumn(Number(column)) as item (item.id)}<button
+									{#each compactItemsForColumn(Number(column)) as item (item.id)}
+										<button
 											class:dimmed={!displayItem(item)}
 											class:conflict={conflictIds.has(item.id)}
 											class:partial-color={preferences.blockColorMode === 'partial'}
@@ -923,26 +1114,50 @@
 												openRelated(item);
 											}}
 											onpointerdown={(event) => beginItemPointer(event, item, 'move')}
-											><span class="item-time"
-												>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span
-											>{#if item.favoriteLevel > 0}<span class="item-favorite"
-													>♥{item.favoriteLevel}</span
-												>{/if}<strong>{item.artistLabel}</strong>{#if item.subContent}<small
-													>{item.subContent}</small
-												>{/if}<em>{laneForItem(item)?.venueName ?? ''}</em>{#if editMode}<span
+											ondblclick={() => openEditor(item)}
+										>
+											<span class="item-time">{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span>
+											{#if item.favoriteLevel > 0}
+												<span class="item-favorite">♥{item.favoriteLevel}</span>
+											{/if}
+											<strong>{item.artistLabel}</strong>
+											{#if item.subContent}
+												<small>{item.subContent}</small>
+											{/if}
+											<em>{laneForItem(item)?.venueName ?? ''}</em>
+											{#if editMode}
+												<span class="item-edit-cue" aria-hidden="true">✎</span>
+												<span
 													class="resize-handle"
 													role="separator"
-													aria-label="Resize item"
+													aria-label="項目の長さを変更"
 													onpointerdown={(event) => {
 														event.stopPropagation();
 														beginItemPointer(event, item, 'resize');
 													}}
-												></span>{/if}</button
-										>{/each}{#if creating?.laneId === addLaneId && compactPreview}<div
+												></span>
+											{/if}
+										</button>
+										{#if editMode}
+											<button
+												class="copy-item-button"
+												style={copyHandleStyle(item)}
+												aria-label={`${item.artistLabel}を${t('duplicate')}`}
+												onpointerdown={(event) => event.stopPropagation()}
+												onclick={(event) => {
+													event.stopPropagation();
+													duplicateItem(item);
+												}}
+											>
+												⧉
+											</button>
+										{/if}
+									{/each}
+									{#if creating?.laneId === addLaneId && compactPreview}<div
 											class="creation-preview"
 											style={`top:${compactPreview.top}px;height:${compactPreview.height}px`}
 										>
-											NEW
+											新規 · {compactPreview.duration}分
 										</div>{/if}
 								</div>{/each}
 						{:else}{#each visibleLanes as lane (lane.id)}<div
@@ -961,40 +1176,65 @@
 										</div>{/if}{#if isToday() && nowMinute >= gridRange.startMinute && nowMinute <= gridRange.endMinute}<div
 											class="now-line"
 											style={`top:${minuteToY(nowMinute)}px`}
-										></div>{/if}{#each itemForLane(lane.id) as item (item.id)}<button
-											class:dimmed={!displayItem(item)}
-											class:conflict={conflictIds.has(item.id)}
-											class:partial-color={preferences.blockColorMode === 'partial'}
-											class="schedule-block"
-											style={itemStyle(item)}
-											aria-label={`${item.artistLabel} ${formatMinute(item.startMinute)}–${formatMinute(item.endMinute)}`}
-											onclick={() => cycleItem(item.id)}
-											oncontextmenu={(event) => {
-												event.preventDefault();
-												openRelated(item);
-											}}
-											onpointerdown={(event) => beginItemPointer(event, item, 'move')}
-											ondblclick={() => openEditor(item)}
-											><span class="item-time"
-												>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span
-											>{#if item.favoriteLevel > 0}<span class="item-favorite"
-													>♥{item.favoriteLevel}</span
-												>{/if}<strong>{item.artistLabel}</strong>{#if item.subContent}<small
-													>{item.subContent}</small
-												>{/if}<em>{lane.venueName ?? ''}</em>{#if editMode}<span
-													class="resize-handle"
-													role="separator"
-													aria-label="Resize item"
-													onpointerdown={(event) => {
+										></div>{/if}
+										{#each itemForLane(lane.id) as item (item.id)}
+											<button
+												class:dimmed={!displayItem(item)}
+												class:conflict={conflictIds.has(item.id)}
+												class:partial-color={preferences.blockColorMode === 'partial'}
+												class="schedule-block"
+												style={itemStyle(item)}
+												aria-label={`${item.artistLabel} ${formatMinute(item.startMinute)}–${formatMinute(item.endMinute)}`}
+												onclick={() => cycleItem(item.id)}
+												oncontextmenu={(event) => {
+													event.preventDefault();
+													openRelated(item);
+												}}
+												onpointerdown={(event) => beginItemPointer(event, item, 'move')}
+												ondblclick={() => openEditor(item)}
+											>
+												<span class="item-time">{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span>
+												{#if item.favoriteLevel > 0}
+													<span class="item-favorite">♥{item.favoriteLevel}</span>
+												{/if}
+												<strong>{item.artistLabel}</strong>
+												{#if item.subContent}
+													<small>{item.subContent}</small>
+												{/if}
+											<em>{lane.venueName ?? ''}</em>
+											{#if editMode}
+												<span class="item-edit-cue" aria-hidden="true">✎</span>
+												<span
+														class="resize-handle"
+														role="separator"
+														aria-label="項目の長さを変更"
+														onpointerdown={(event) => {
+															event.stopPropagation();
+															beginItemPointer(event, item, 'resize');
+														}}
+													></span>
+												{/if}
+											</button>
+											{#if editMode}
+												<button
+													class="copy-item-button"
+													style={copyHandleStyle(item)}
+													aria-label={`${item.artistLabel}を${t('duplicate')}`}
+													onpointerdown={(event) => event.stopPropagation()}
+													onclick={(event) => {
 														event.stopPropagation();
-														beginItemPointer(event, item, 'resize');
+														duplicateItem(item);
 													}}
-												></span>{/if}</button
-										>{/each}{#if creating?.laneId === lane.id && compactPreview}<div
+												>
+													⧉
+												</button>
+											{/if}
+										{/each}
+										{#if creating?.laneId === lane.id && compactPreview}<div
 											class="creation-preview"
 											style={`top:${compactPreview.top}px;height:${compactPreview.height}px`}
 										>
-											NEW
+											新規 · {compactPreview.duration}分
 										</div>{/if}
 								</div>{/each}{/if}
 					</div>
@@ -1013,79 +1253,182 @@
 	</div>
 {/if}
 
-{#if editingItemId && editDraft}<div
+{#if festivalSettingsOpen && festivalSettingsDraft}
+	<div
 		class="modal-backdrop"
 		role="presentation"
 		onclick={(event) => {
-			if (event.target === event.currentTarget) {
-				editingItemId = null;
-				editDraft = null;
-			}
+			if (event.target === event.currentTarget) closeFestivalSettings();
+		}}
+	>
+		<div class="modal festival-settings-modal" role="dialog" aria-modal="true" aria-labelledby="festival-settings-title">
+			<div class="modal-heading">
+				<div>
+					<p class="eyebrow">フェス基本設定</p>
+					<h2 id="festival-settings-title">フェス設定</h2>
+				</div>
+				<button class="icon-button" aria-label={t('close')} onclick={closeFestivalSettings}>×</button>
+			</div>
+			<div class="form-grid">
+				<label class="festival-settings-title-field">
+					フェス名
+					<input bind:value={festivalSettingsDraft.title} />
+				</label>
+				<label>
+					タイムゾーン
+					<input list="timezone-options" bind:value={festivalSettingsDraft.timezone} />
+				</label>
+				<label>
+					日付
+					<input type="date" bind:value={festivalSettingsDraft.date} />
+				</label>
+				<label>
+					表示開始時刻
+					<input inputmode="numeric" placeholder="09:00" bind:value={festivalSettingsDraft.displayStart} />
+				</label>
+				<label>
+					表示終了時刻
+					<input inputmode="numeric" placeholder="30:00" bind:value={festivalSettingsDraft.displayEnd} />
+				</label>
+			</div>
+			<datalist id="timezone-options">
+				<option value="Asia/Tokyo"></option>
+				<option value="Asia/Seoul"></option>
+				<option value="Asia/Shanghai"></option>
+				<option value="Asia/Singapore"></option>
+				<option value="Asia/Bangkok"></option>
+				<option value="Australia/Sydney"></option>
+				<option value="Europe/London"></option>
+				<option value="America/Los_Angeles"></option>
+				<option value="America/New_York"></option>
+			</datalist>
+			<p class="field-note">表示範囲はタイムテーブルの見える時間だけを変更します。終了時刻は翌朝06:00を表す30:00まで指定でき、項目の時刻は変更されません。</p>
+			<div class="modal-actions">
+				<button class="quiet-button" onclick={closeFestivalSettings}>{t('cancel')}</button>
+				<span></span>
+				<button class="primary-button" onclick={saveFestivalSettings}>{t('apply')}</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if editingItemId && editDraft}
+	<div
+		class="modal-backdrop"
+		role="presentation"
+		onclick={(event) => {
+			if (event.target === event.currentTarget) closeEditor();
 		}}
 	>
 		<div class="modal editor-modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
 			<div class="modal-heading">
 				<div>
-					<p class="eyebrow">EDIT ITEM</p>
-					<h2 id="edit-title">{editDraft.artistLabel || 'Item'}</h2>
+					<p class="eyebrow">{editingItemIsNew ? '新規項目' : '項目を編集'}</p>
+					<h2 id="edit-title">{editDraft.artistLabel || '新しい項目'}</h2>
 				</div>
-				<button
-					class="icon-button"
-					aria-label={t('close')}
-					onclick={() => {
-						editingItemId = null;
-						editDraft = null;
-					}}>×</button
-				>
+				<button class="icon-button" aria-label={t('close')} onclick={closeEditor}>×</button>
 			</div>
 			<div class="form-grid">
-				<label>アーティスト<input bind:value={editDraft.artistLabel} /></label><label
-					>サブコンテンツ<input bind:value={editDraft.subContent} /></label
-				><label
-					>開始時刻<input
+				<label>
+					アーティスト
+					<input bind:value={editDraft.artistLabel} />
+				</label>
+				<label>
+					サブコンテンツ
+					<input bind:value={editDraft.subContent} />
+				</label>
+				<label>
+					開始時刻
+					<input
 						value={formatMinute(editDraft.startMinute)}
 						oninput={(event) =>
 							(editDraft!.startMinute = parseMinute(
 								(event.currentTarget as HTMLInputElement).value
 							))}
-					/></label
-				><label
-					>終了時刻<input
+					/>
+				</label>
+				<label>
+					終了時刻
+					<input
 						value={formatMinute(editDraft.endMinute)}
 						oninput={(event) =>
 							(editDraft!.endMinute = parseMinute((event.currentTarget as HTMLInputElement).value))}
-					/></label
-				>
+					/>
+				</label>
 			</div>
 			<div class="favorite-editor">
-				<span>お気に入り</span>{#each [0, 1, 2, 3] as level (level)}<button
+				<span>お気に入り</span>
+				{#each [0, 1, 2, 3] as level (level)}
+					<button
 						class:active={editDraft.favoriteLevel === level}
-						onclick={() => (editDraft!.favoriteLevel = level as 0 | 1 | 2 | 3)}>♥{level}</button
-					>{/each}
+						onclick={() => (editDraft!.favoriteLevel = level as 0 | 1 | 2 | 3)}
+					>
+						♥{level}
+					</button>
+				{/each}
 			</div>
-			{#if laneForItem(editDraft)?.type === 'stage'}<fieldset class="pairing-field">
-					<legend>関連する特典会</legend
-					>{#each items.filter((item) => laneForItem(item)?.type === 'tokuten') as tokutenItem (tokutenItem.id)}<label
-							><input
-								type="checkbox"
-								checked={editDraft.pairedTokutenItemIds.includes(tokutenItem.id)}
-								onchange={() => togglePair(tokutenItem.id)}
-							/>{formatMinute(tokutenItem.startMinute)}
-							{tokutenItem.artistLabel}</label
-						>{/each}
-				</fieldset>{/if}
+			<fieldset class="pairing-field related-event-field">
+				<legend>{t('related')}</legend>
+				{#if editingItemIsNew}
+					<p class="field-note">保存時に、指定したレーンへ同じ長さの関連イベントを追加します。</p>
+					<div class="form-grid related-event-create">
+						<label>
+							{t('relatedLane')}
+							<select bind:value={relatedLaneId}>
+								<option value="">追加しない</option>
+								{#each lanes as lane (lane.id)}
+									<option value={lane.id}>{lane.name}（{laneTypeLabel(lane.type)}）</option>
+								{/each}
+							</select>
+						</label>
+						<label>
+							{t('relatedTiming')}
+							<select bind:value={relatedDelay} disabled={!relatedLaneId}>
+								{#each relatedDelayOptions as minutes (minutes)}
+									<option value={minutes}>{minutes === 0 ? t('afterEnd') : `${minutes}分後`}</option>
+								{/each}
+								<option value="custom">{t('custom')}</option>
+							</select>
+						</label>
+						{#if relatedDelay === 'custom'}
+							<label>
+								カスタム時間
+								<select bind:value={customRelatedDelay} disabled={!relatedLaneId}>
+									{#each customRelatedDelayOptions as minutes (minutes)}
+										<option value={minutes}>{minutes}分後</option>
+									{/each}
+								</select>
+							</label>
+						{/if}
+					</div>
+				{/if}
+				<details class="existing-event-picker">
+					<summary>既存のイベントを関連付ける</summary>
+					<div class="pairing-list">
+						{#each items.filter((item) => item.id !== editDraft!.id) as relatedItem (relatedItem.id)}
+							<label>
+								<input
+									type="checkbox"
+									checked={editDraft.pairedTokutenItemIds.includes(relatedItem.id)}
+									onchange={() => togglePair(relatedItem.id)}
+								/>
+								<span>{formatMinute(relatedItem.startMinute)}–{formatMinute(relatedItem.endMinute)}</span>
+								<strong>{relatedItem.artistLabel}</strong>
+								<small>{laneForItem(relatedItem)?.name}</small>
+							</label>
+						{/each}
+					</div>
+				</details>
+			</fieldset>
 			<div class="modal-actions">
-				<button class="danger-button" onclick={deleteItem}>{t('delete')}</button><span
-				></span><button
-					class="quiet-button"
-					onclick={() => {
-						editingItemId = null;
-						editDraft = null;
-					}}>{t('cancel')}</button
-				><button class="primary-button" onclick={saveEditor}>{t('apply')}</button>
+				<button class="danger-button" onclick={deleteItem}>{t('delete')}</button>
+				<span></span>
+				<button class="quiet-button" onclick={closeEditor}>{t('cancel')}</button>
+				<button class="primary-button" onclick={saveEditor}>{t('apply')}</button>
 			</div>
 		</div>
-	</div>{/if}
+	</div>
+{/if}
 
 {#if laneDraft}
 	<div
@@ -1156,11 +1499,11 @@
 					</span>
 				</label>
 			</div>
-			{#if !laneDraftIsNew && laneDraft.type === 'stage'}
+			{#if !laneDraftIsNew}
 				<div class="related-section">
 					<h3>{t('related')}</h3>
-					{#if relatedTokutenItems(laneDraft).length}
-						{#each relatedTokutenItems(laneDraft) as item (item.id)}
+					{#if relatedEventItems(laneDraft).length}
+						{#each relatedEventItems(laneDraft) as item (item.id)}
 							<div class="related-row related-row-static">
 								<span>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span>
 								<strong>{item.artistLabel}</strong>
@@ -1168,7 +1511,7 @@
 							</div>
 						{/each}
 					{:else}
-						<p class="empty-copy">関連する特典会はありません。</p>
+						<p class="empty-copy">関連するイベントはありません。</p>
 					{/if}
 				</div>
 			{/if}
@@ -1181,7 +1524,8 @@
 	</div>
 {/if}
 
-{#if infoLane}<div
+{#if infoLane}
+	<div
 		class="modal-backdrop"
 		role="presentation"
 		onclick={(event) => {
@@ -1191,48 +1535,52 @@
 		<div class="modal info-modal" role="dialog" aria-modal="true" aria-labelledby="lane-info-title">
 			<div class="modal-heading">
 				<div>
-					<p class="eyebrow">LANE INFO · {infoLane.type}</p>
+					<p class="eyebrow">レーン情報 · {laneTypeLabel(infoLane.type)}</p>
 					<h2 id="lane-info-title">{infoLane.name}</h2>
 				</div>
-				<button class="icon-button" aria-label={t('close')} onclick={() => (infoLaneId = null)}
-					>×</button
-				>
+				<button class="icon-button" aria-label={t('close')} onclick={() => (infoLaneId = null)}>×</button>
 			</div>
 			<div class="lane-info-grid">
-				<div><span>VENUE</span><strong>{infoLane.venueName || '—'}</strong></div>
 				<div>
-					<span>OPENING</span><strong
-						>{infoLane.openingMinute !== undefined
-							? formatMinute(infoLane.openingMinute)
-							: '—'}</strong
-					>
+					<span>{t('venue')}</span>
+					<strong>{infoLane.venueName || '—'}</strong>
 				</div>
-				{#if infoLane.venueUrl}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve --><a
-						href={infoLane.venueUrl}
-						target="_blank"
-						rel="noreferrer">Google Maps を開く ↗</a
-					>{/if}
+				<div>
+					<span>{t('opening')}</span>
+					<strong>{infoLane.openingMinute !== undefined ? formatMinute(infoLane.openingMinute) : '—'}</strong>
+				</div>
+				{#if infoLane.venueUrl}
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href={infoLane.venueUrl} target="_blank" rel="noreferrer">会場を開く ↗</a>
+				{/if}
 			</div>
-			{#if infoLane.type === 'stage'}<div class="related-section">
-					<h3>{t('related')}</h3>
-					{#if relatedTokutenItems(infoLane).length}{#each relatedTokutenItems(infoLane) as item (item.id)}<button
-								class="related-row"
-								onclick={() => {
-									relatedModalItemId = item.id;
-									infoLaneId = null;
-								}}
-								><span>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span><strong
-									>{item.artistLabel}</strong
-								><small>{laneForItem(item)?.name}</small></button
-							>{/each}{:else}<p class="empty-copy">関連する特典会はありません。</p>{/if}
-				</div>{/if}
+			<div class="related-section">
+				<h3>{t('related')}</h3>
+				{#if relatedEventItems(infoLane).length}
+					{#each relatedEventItems(infoLane) as item (item.id)}
+						<button
+							class="related-row"
+							onclick={() => {
+								relatedModalItemId = item.id;
+								infoLaneId = null;
+							}}
+						>
+							<span>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span>
+							<strong>{item.artistLabel}</strong>
+							<small>{laneForItem(item)?.name}</small>
+						</button>
+					{/each}
+				{:else}
+					<p class="empty-copy">関連するイベントはありません。</p>
+				{/if}
+			</div>
 			<div class="modal-actions">
-				<span></span><button class="primary-button" onclick={() => (infoLaneId = null)}
-					>{t('close')}</button
-				>
+				<span></span>
+				<button class="primary-button" onclick={() => (infoLaneId = null)}>{t('close')}</button>
 			</div>
 		</div>
-	</div>{/if}
+	</div>
+{/if}
 
 {#if relatedModalItemId}<div
 		class="modal-backdrop"
@@ -1369,18 +1717,122 @@
 	</div>{/if}
 
 <style>
-	:root {
+	:global(:root) {
 		--ink: #1e293b;
 		--muted: #64748b;
 		--paper: #f5f3ef;
 		--panel: #fffefa;
 		--line: #d8d8d2;
 		--teal: #226b72;
+		--teal-strong: #174f55;
+		--surface-muted: #ebe9e4;
+		--surface-soft: #f2f1ed;
+		--surface-selected: #e3f0ed;
+		--surface-grid: #e7e7e4;
+		--surface-lane: #e4e5e2;
+		--surface-axis: #eeefec;
+		--surface-corner: #d5d6d2;
+		--surface-lane-header: #ffffff;
+		--surface-item-neutral: #f4f3ee;
+		--ink-item-neutral: #263436;
+		--text-grid: #4e5755;
+		--text-lane: #1c2b30;
+		--text-lane-control: #42545a;
+		--text-lane-meta: #53676b;
+		--text-corner: #6d726f;
+		--line-grid: #c1c2be;
+		--line-grid-strong: #8f9693;
+		--line-lane: rgba(112, 120, 117, 0.32);
+		--grid-major: rgba(86, 95, 92, 0.23);
+		--grid-medium: rgba(86, 95, 92, 0.12);
+		--grid-minor: rgba(86, 95, 92, 0.06);
+		--opening: #2f3635;
+		--opening-surface: #252d2d;
+		--now: #d34d4d;
+		--danger: #b44a43;
+		--danger-border: #e8b7b3;
+		--danger-surface: #fff4f2;
 		--warning: #ffe7a1;
+		--warning-ink: #714d00;
+		--warning-muted: #8e6d20;
+		--warning-accent: #d49b0b;
+		--favorite: #c53e41;
+		--favorite-surface: #fff1ef;
+		--favorite-border: #c94d4e;
+		--on-accent: #ffffff;
+		--saved: #5ea67e;
+		--saved-halo: rgba(94, 166, 126, 0.12);
+		--hover-surface: #ebe9e4;
+		--active-line: #b5d0cc;
+		--toggle-off: #c8ceca;
+		--modal-border: #d0d0c9;
+		--toast: #233436;
+		--item-text-fallback: #13262b;
+		--partial-item-border: #737a79;
+		--copy-surface: rgba(255, 255, 255, 0.88);
+		--copy-border: rgba(20, 38, 43, 0.42);
+		--copy-ink: #1d4e54;
+		--shadow-soft: rgba(20, 30, 30, 0.08);
+		--shadow-control: rgba(20, 30, 30, 0.18);
+		--shadow-block: rgba(25, 35, 35, 0.16);
+		--shadow-block-hover: rgba(25, 35, 35, 0.25);
+		--shadow-modal: rgba(16, 25, 25, 0.26);
+		--shadow-toast: rgba(16, 28, 28, 0.25);
+		--backdrop: rgba(20, 28, 28, 0.38);
+		--scrollbar: #b4b6b4;
+		--mobile-dock: rgba(255, 254, 250, 0.96);
+	}
+	:global(html[data-theme='dark']) {
+		--ink: #e7edf1;
+		--muted: #a6b2bd;
+		--paper: #11181d;
+		--panel: #1b252c;
+		--line: #3a4852;
+		--teal: #67b8be;
+		--teal-strong: #8bd6da;
+		--surface-muted: #27333a;
+		--surface-soft: #253238;
+		--surface-selected: #223b3f;
+		--surface-grid: #151c21;
+		--surface-lane: #263037;
+		--surface-axis: #202a30;
+		--surface-corner: #273239;
+		--surface-lane-header: #ffffff;
+		--text-grid: #c1cbd2;
+		--text-lane-control: #d1dce2;
+		--text-lane-meta: #d1dce2;
+		--text-corner: #c1cbd2;
+		--line-grid: #45545e;
+		--line-grid-strong: #596975;
+		--line-lane: rgba(162, 180, 190, 0.34);
+		--grid-major: rgba(180, 198, 207, 0.25);
+		--grid-medium: rgba(180, 198, 207, 0.13);
+		--grid-minor: rgba(180, 198, 207, 0.07);
+		--warning: #4e4017;
+		--warning-ink: #ffe6a3;
+		--warning-muted: #ead18c;
+		--copy-surface: rgba(38, 52, 59, 0.94);
+		--copy-border: rgba(139, 214, 218, 0.62);
+		--copy-ink: #8bd6da;
+		--shadow-soft: rgba(2, 7, 10, 0.16);
+		--shadow-control: rgba(2, 7, 10, 0.32);
+		--shadow-block: rgba(2, 7, 10, 0.35);
+		--shadow-block-hover: rgba(2, 7, 10, 0.5);
+		--shadow-modal: rgba(2, 7, 10, 0.58);
+		--shadow-toast: rgba(2, 7, 10, 0.5);
+		--backdrop: rgba(2, 7, 10, 0.66);
+		--scrollbar: #61717c;
+		--mobile-dock: rgba(27, 37, 44, 0.96);
+		--hover-surface: color-mix(in srgb, var(--panel) 82%, var(--ink));
+		--active-line: color-mix(in srgb, var(--teal) 45%, var(--line));
+		--toggle-off: #52626d;
+		--modal-border: var(--line);
+		--toast: #102025;
 	}
 	.app-shell {
 		min-height: 100vh;
 		background: var(--paper);
+		color: var(--ink);
 	}
 	.loading-screen {
 		display: grid;
@@ -1395,12 +1847,13 @@
 		gap: 20px;
 		padding: 18px clamp(18px, 4vw, 56px);
 		border-bottom: 1px solid var(--line);
-		background: rgba(255, 254, 250, 0.92);
+		background: var(--panel);
 	}
 	.brand-lockup,
 	.header-actions,
-	.toolbar-primary,
-	.toolbar-secondary,
+	.browse-controls,
+	.edit-workspace,
+	.edit-commands,
 	.festival-strip,
 	.festival-actions,
 	.favorite-control,
@@ -1423,7 +1876,7 @@
 		place-items: center;
 		border-radius: 12px 4px 12px 4px;
 		background: var(--teal);
-		color: white;
+		color: var(--on-accent);
 		font:
 			700 12px/1 Georgia,
 			serif;
@@ -1459,6 +1912,14 @@
 	.header-actions {
 		gap: 8px;
 	}
+	.theme-toggle {
+		white-space: nowrap;
+	}
+	.theme-toggle.active {
+		border-color: var(--teal);
+		background: color-mix(in srgb, var(--teal) 16%, var(--panel));
+		color: var(--teal);
+	}
 	.save-state {
 		gap: 6px;
 		color: var(--muted);
@@ -1468,8 +1929,8 @@
 		width: 7px;
 		height: 7px;
 		border-radius: 50%;
-		background: #5ea67e;
-		box-shadow: 0 0 0 4px rgba(94, 166, 126, 0.12);
+		background: var(--saved);
+		box-shadow: 0 0 0 4px var(--saved-halo);
 	}
 	.app-main {
 		max-width: 1600px;
@@ -1510,19 +1971,44 @@
 		color: var(--teal);
 	}
 	.toolbar {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		align-items: flex-start;
+		grid-template-columns: minmax(0, 1fr) auto;
 		gap: 12px;
 		padding: 11px 0;
 		flex-wrap: wrap;
 	}
-	.toolbar-primary,
-	.toolbar-secondary {
+	.browse-controls {
+		display: flex;
+		align-items: center;
 		gap: 7px;
 		flex-wrap: wrap;
+		min-width: 0;
 	}
-	.toolbar-secondary {
+	.edit-workspace {
 		margin-left: auto;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 6px;
+	}
+	.edit-commands {
+		grid-column: 1 / -1;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		gap: 6px;
+		padding: 6px;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--surface-muted);
+	}
+	.edit-workspace-label {
+		padding: 0 4px;
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		white-space: nowrap;
 	}
 	.search-field {
 		min-width: min(270px, 100%);
@@ -1610,7 +2096,7 @@
 	.settings-button:hover,
 	.settings-button.active {
 		border-color: var(--teal);
-		background: #e3f0ed;
+		background: var(--surface-selected);
 		color: var(--teal);
 	}
 	.settings-panel {
@@ -1625,7 +2111,7 @@
 		border: 1px solid var(--line);
 		border-radius: 6px;
 		background: var(--panel);
-		box-shadow: 0 12px 28px rgba(20, 30, 30, 0.18);
+		box-shadow: 0 12px 28px var(--shadow-control);
 	}
 	.settings-row {
 		display: grid;
@@ -1665,7 +2151,7 @@
 		padding: 9px 10px;
 		border: 1px solid var(--line);
 		border-radius: 4px;
-		background: #f2f1ed;
+		background: var(--surface-soft);
 		color: var(--muted);
 		font-size: 12px;
 		text-align: left;
@@ -1676,8 +2162,8 @@
 		font-size: 10px;
 	}
 	.settings-choice.active {
-		border-color: #b5d0cc;
-		background: #e3f0ed;
+		border-color: var(--active-line);
+		background: var(--surface-selected);
 		color: var(--teal);
 	}
 	.icon-button,
@@ -1694,7 +2180,7 @@
 	.icon-button.active,
 	.edit-toggle:hover {
 		border-color: var(--line);
-		background: #ebe9e4;
+		background: var(--hover-surface);
 		color: var(--ink);
 	}
 	.outline-button {
@@ -1714,7 +2200,7 @@
 	}
 	.edit-toggle.active {
 		border-color: var(--teal);
-		background: #e3f0ed;
+		background: var(--surface-selected);
 		color: var(--teal);
 	}
 	.edit-toggle-icon {
@@ -1726,7 +2212,7 @@
 		width: 30px;
 		height: 18px;
 		border-radius: 999px;
-		background: #c8ceca;
+		background: var(--toggle-off);
 		transition: background 140ms ease;
 	}
 	.edit-toggle-track span {
@@ -1736,8 +2222,8 @@
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		background: white;
-		box-shadow: 0 1px 3px rgba(20, 30, 30, 0.24);
+		background: var(--on-accent);
+		box-shadow: 0 1px 3px var(--shadow-control);
 		transition: transform 140ms ease;
 	}
 	.edit-toggle.active .edit-toggle-track {
@@ -1750,12 +2236,12 @@
 		padding: 0 15px;
 		border: 1px solid var(--teal);
 		background: var(--teal);
-		color: white;
+		color: var(--on-accent);
 		font-weight: 800;
-		box-shadow: 0 4px 9px rgba(34, 107, 114, 0.13);
+		box-shadow: 0 4px 9px color-mix(in srgb, var(--teal) 13%, transparent);
 	}
 	.primary-button:hover {
-		background: #174f55;
+		background: var(--teal-strong);
 	}
 	.primary-button:disabled {
 		opacity: 0.45;
@@ -1766,13 +2252,13 @@
 		cursor: not-allowed;
 	}
 	.danger-text {
-		color: #b44a43;
+		color: var(--danger);
 	}
 	.danger-button {
 		padding: 0 12px;
-		border: 1px solid #e8b7b3;
-		background: #fff4f2;
-		color: #b44a43;
+		border: 1px solid var(--danger-border);
+		background: var(--danger-surface);
+		color: var(--danger);
 	}
 	.warning-bar {
 		display: flex;
@@ -1780,9 +2266,9 @@
 		gap: 9px;
 		margin: 5px 0 11px;
 		padding: 9px 12px;
-		border-left: 3px solid #d49b0b;
+		border-left: 3px solid var(--warning-accent);
 		background: var(--warning);
-		color: #714d00;
+		color: var(--warning-ink);
 		font-size: 12px;
 	}
 	.warning-bar strong {
@@ -1791,12 +2277,12 @@
 		height: 20px;
 		place-items: center;
 		border-radius: 50%;
-		background: #d49b0b;
-		color: white;
+		background: var(--warning-accent);
+		color: var(--on-accent);
 	}
 	.warning-hint {
 		margin-left: auto;
-		color: #8e6d20;
+		color: var(--warning-muted);
 		font-size: 11px;
 	}
 	.favorite-control {
@@ -1805,11 +2291,11 @@
 		padding: 3px 5px;
 		border: 1px solid var(--line);
 		border-radius: 4px;
-		background: #ebe9e4;
+		background: var(--surface-muted);
 	}
 	.filter-label {
 		padding: 0 4px;
-		color: #a94846;
+		color: var(--favorite);
 		font-size: 12px;
 		font-weight: 900;
 	}
@@ -1832,11 +2318,11 @@
 		background: var(--panel);
 		color: var(--ink);
 		font-weight: 800;
-		box-shadow: 0 1px 4px rgba(20, 30, 30, 0.08);
+		box-shadow: 0 1px 4px var(--shadow-soft);
 	}
 	.layout-buttons {
 		margin-left: 4px;
-		border-left: 1px solid #d4d1ca;
+		border-left: 1px solid var(--line);
 		padding-left: 4px;
 	}
 	.grid-meta {
@@ -1850,9 +2336,9 @@
 		position: relative;
 		max-height: min(72vh, 540px);
 		overflow: auto;
-		border: 1px solid #c9c9c2;
-		background: #e7e7e4;
-		scrollbar-color: #b4b6b4 transparent;
+		border: 1px solid var(--line);
+		background: var(--surface-grid);
+		scrollbar-color: var(--scrollbar) transparent;
 	}
 	.schedule-grid {
 		display: grid;
@@ -1867,9 +2353,9 @@
 		top: 0;
 		z-index: 5;
 		height: var(--header-height);
-		border-right: 1px solid #c1c2be;
-		border-bottom: 1px solid #b8b9b6;
-		background: #d5d6d2;
+		border-right: 1px solid var(--line-grid);
+		border-bottom: 1px solid var(--line-grid);
+		background: var(--surface-corner);
 	}
 	.schedule-corner {
 		left: 0;
@@ -1877,7 +2363,7 @@
 		display: grid;
 		place-items: end center;
 		padding-bottom: 10px;
-		color: #6d726f;
+		color: var(--text-corner);
 		font-size: 10px;
 		font-weight: 800;
 	}
@@ -1887,8 +2373,8 @@
 		gap: 6px;
 		min-width: var(--lane-width);
 		padding: 10px 9px 9px;
-		background: color-mix(in srgb, var(--lane-color) 70%, #ffffff);
-		color: #1c2b30;
+		background: color-mix(in srgb, var(--lane-color) 70%, var(--surface-lane-header));
+		color: var(--text-lane);
 		font-size: 12px;
 		line-height: 1.1;
 	}
@@ -1912,9 +2398,9 @@
 	.lane-name-input {
 		align-self: stretch;
 		padding: 3px 5px;
-		border: 1px solid #7c9b9c;
+		border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--line));
 		border-radius: 3px;
-		background: rgba(255, 255, 255, 0.82);
+		background: color-mix(in srgb, var(--panel) 82%, transparent);
 		color: inherit;
 		font: inherit;
 	}
@@ -1924,7 +2410,7 @@
 		padding: 0;
 		border: 0;
 		background: transparent;
-		color: #42545a;
+		color: var(--lane-icon, var(--text-lane-control));
 		font-size: 15px;
 	}
 	.lane-header .lane-edit-button {
@@ -1932,7 +2418,8 @@
 		font-size: 13px;
 	}
 	.lane-header button:hover {
-		color: var(--teal);
+		color: var(--lane-icon, var(--teal));
+		filter: brightness(0.82);
 	}
 	.lane-header button:disabled {
 		cursor: not-allowed;
@@ -1942,7 +2429,7 @@
 		position: absolute;
 		left: 9px;
 		top: 9px;
-		color: #53676b;
+		color: var(--text-lane-meta);
 		font-size: 9px;
 		font-weight: 800;
 	}
@@ -1952,14 +2439,14 @@
 		z-index: 4;
 		grid-column: 1;
 		grid-row: 2;
-		background: #eeefec;
-		border-right: 2px solid #8f9693;
+		background: var(--surface-axis);
+		border-right: 2px solid var(--line-grid-strong);
 	}
 	.time-axis span {
 		position: absolute;
 		right: 8px;
 		transform: translateY(-50%);
-		color: #4e5755;
+		color: var(--text-grid);
 		font:
 			11px/1 'IBM Plex Mono',
 			ui-monospace,
@@ -1972,8 +2459,8 @@
 		transform: translateY(-50%);
 		padding: 2px 3px;
 		border-radius: 2px;
-		background: #d34d4d;
-		color: white;
+		background: var(--now);
+		color: var(--on-accent);
 		font:
 			700 8px/1 ui-monospace,
 			monospace;
@@ -1989,17 +2476,17 @@
 		position: relative;
 		min-width: var(--lane-width);
 		overflow: visible;
-		border-right: 1px solid rgba(112, 120, 117, 0.32);
-		background: #e4e5e2;
+		border-right: 1px solid var(--line-lane);
+		background: var(--surface-lane);
 	}
 	.grid-lines {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
 		background-image:
-			linear-gradient(to bottom, rgba(86, 95, 92, 0.23) 1px, transparent 1px),
-			linear-gradient(to bottom, rgba(86, 95, 92, 0.12) 1px, transparent 1px),
-			linear-gradient(to bottom, rgba(86, 95, 92, 0.06) 1px, transparent 1px);
+			linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px),
+			linear-gradient(to bottom, var(--grid-medium) 1px, transparent 1px),
+			linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px);
 		background-size:
 			100% 54px,
 			100% 27px,
@@ -2010,7 +2497,7 @@
 		right: 0;
 		left: 0;
 		z-index: 2;
-		border-top: 3px solid #2f3635;
+		border-top: 3px solid var(--opening);
 		pointer-events: none;
 	}
 	.opening-marker span {
@@ -2018,8 +2505,8 @@
 		top: -13px;
 		left: 5px;
 		padding: 2px 4px;
-		background: #252d2d;
-		color: white;
+		background: var(--opening-surface);
+		color: var(--on-accent);
 		font:
 			8px/1 ui-monospace,
 			monospace;
@@ -2029,7 +2516,7 @@
 		right: -1px;
 		left: -1px;
 		z-index: 3;
-		border-top: 2px solid #d34d4d;
+		border-top: 2px solid var(--now);
 		pointer-events: none;
 	}
 	.now-line::after {
@@ -2039,7 +2526,7 @@
 		width: 7px;
 		height: 7px;
 		border-radius: 50%;
-		background: #d34d4d;
+		background: var(--now);
 		content: '';
 	}
 	.schedule-block {
@@ -2056,9 +2543,9 @@
 		border-left: 3px solid var(--item-color);
 		border-radius: 5px;
 		background: var(--item-color);
-		color: var(--item-text, #13262b);
+		color: var(--item-text, var(--item-text-fallback));
 		text-align: left;
-		box-shadow: 0 1px 4px rgba(25, 35, 35, 0.16);
+		box-shadow: 0 1px 4px var(--shadow-block);
 		transition:
 			filter 0.12s ease,
 			opacity 0.12s ease,
@@ -2068,19 +2555,19 @@
 	.schedule-block:focus-visible {
 		z-index: 7;
 		filter: saturate(1.1) brightness(1.03);
-		box-shadow: 0 4px 11px rgba(25, 35, 35, 0.25);
+		box-shadow: 0 4px 11px var(--shadow-block-hover);
 	}
 	.schedule-block.partial-color {
-		border: 1px solid color-mix(in srgb, var(--item-color) 55%, #737a79);
+		border: 1px solid color-mix(in srgb, var(--item-color) 55%, var(--partial-item-border));
 		border-left: 8px solid var(--item-color);
-		background: #f4f3ee;
-		color: #263436;
+		background: var(--surface-item-neutral);
+		color: var(--ink-item-neutral);
 	}
 	.schedule-block.dimmed {
 		opacity: 0.2;
 	}
 	.schedule-block.conflict {
-		outline: 2px dashed #b44a43;
+		outline: 2px dashed var(--danger);
 		outline-offset: -2px;
 	}
 	.item-time {
@@ -2094,7 +2581,7 @@
 		position: absolute;
 		top: 4px;
 		right: 5px;
-		color: #c53e41;
+		color: var(--favorite);
 		font:
 			700 11px/1 ui-monospace,
 			monospace;
@@ -2139,6 +2626,38 @@
 		height: 7px;
 		cursor: ns-resize;
 	}
+	.item-edit-cue {
+		position: absolute;
+		bottom: 4px;
+		left: 6px;
+		font-size: 12px;
+		font-weight: 800;
+		line-height: 1;
+		opacity: 0.78;
+		pointer-events: none;
+	}
+	.copy-item-button {
+		position: absolute;
+		right: 7px;
+		left: auto;
+		z-index: 9;
+		width: 22px;
+		height: 17px;
+		padding: 0;
+		border: 1px solid var(--copy-border);
+		border-radius: 3px;
+		background: var(--copy-surface);
+		color: var(--copy-ink);
+		font-size: 12px;
+		line-height: 1;
+		box-shadow: 0 1px 3px var(--shadow-control);
+	}
+	.copy-item-button:hover,
+	.copy-item-button:focus-visible {
+		border-color: var(--copy-ink);
+		background: var(--panel);
+		outline: 0;
+	}
 	.creation-preview {
 		position: absolute;
 		right: 5px;
@@ -2147,9 +2666,10 @@
 		display: grid;
 		place-items: center;
 		border: 2px dashed var(--teal);
-		background: rgba(34, 107, 114, 0.18);
+		background: color-mix(in srgb, var(--teal) 18%, transparent);
 		color: var(--teal);
 		font-size: 10px;
+		font-weight: 800;
 		pointer-events: none;
 	}
 	.now-button {
@@ -2162,11 +2682,11 @@
 		padding: 11px 15px;
 		border: 0;
 		border-radius: 999px;
-		background: #d34d4d;
-		color: white;
+		background: var(--now);
+		color: var(--on-accent);
 		font-size: 12px;
 		font-weight: 800;
-		box-shadow: 0 6px 18px rgba(120, 40, 40, 0.25);
+		box-shadow: 0 6px 18px color-mix(in srgb, var(--now) 25%, transparent);
 	}
 	.mobile-dock {
 		display: none;
@@ -2179,10 +2699,10 @@
 		max-width: min(360px, calc(100vw - 44px));
 		padding: 12px 15px;
 		border-radius: 4px;
-		background: #233436;
-		color: white;
+		background: var(--toast);
+		color: var(--on-accent);
 		font-size: 12px;
-		box-shadow: 0 8px 22px rgba(16, 28, 28, 0.25);
+		box-shadow: 0 8px 22px var(--shadow-toast);
 	}
 	.modal-backdrop {
 		position: fixed;
@@ -2191,17 +2711,17 @@
 		display: grid;
 		place-items: center;
 		padding: 16px;
-		background: rgba(20, 28, 28, 0.38);
+		background: var(--backdrop);
 	}
 	.modal {
 		width: min(560px, 100%);
 		max-height: min(760px, calc(100vh - 32px));
 		overflow: auto;
 		padding: 22px;
-		border: 1px solid #d0d0c9;
+		border: 1px solid var(--modal-border);
 		border-radius: 7px;
-		background: #fffefa;
-		box-shadow: 0 24px 60px rgba(16, 25, 25, 0.26);
+		background: var(--panel);
+		box-shadow: 0 24px 60px var(--shadow-modal);
 	}
 	.modal-heading {
 		display: flex;
@@ -2234,7 +2754,7 @@
 		padding: 10px;
 		border: 1px solid var(--line);
 		border-radius: 4px;
-		background: white;
+		background: var(--panel);
 		color: var(--ink);
 		font-size: 13px;
 	}
@@ -2273,12 +2793,12 @@
 		padding: 6px 9px;
 		border: 1px solid var(--line);
 		border-radius: 3px;
-		background: white;
-		color: #ba4144;
+		background: var(--panel);
+		color: var(--favorite);
 	}
 	.favorite-editor button.active {
-		border-color: #c94d4e;
-		background: #fff1ef;
+		border-color: var(--favorite-border);
+		background: var(--favorite-surface);
 		font-weight: 800;
 	}
 	.pairing-field {
@@ -2297,6 +2817,68 @@
 		align-items: center;
 		gap: 7px;
 	}
+	.related-event-field {
+		gap: 12px;
+		margin: 18px 0;
+		border-radius: 5px;
+	}
+	.field-note {
+		margin: 0;
+		color: var(--muted);
+		font-size: 12px;
+		line-height: 1.5;
+	}
+	.related-event-create {
+		width: 100%;
+	}
+	.related-event-create label {
+		display: grid;
+		align-items: initial;
+		gap: 6px;
+	}
+	.related-event-create select {
+		width: 100%;
+	}
+	.existing-event-picker {
+		border-top: 1px solid var(--line);
+		padding-top: 10px;
+	}
+	.existing-event-picker summary {
+		cursor: pointer;
+		color: var(--ink);
+		font-size: 12px;
+		font-weight: 800;
+	}
+	.festival-settings-title-field {
+		grid-column: 1 / -1;
+	}
+	.pairing-list {
+		display: grid;
+		gap: 4px;
+		max-height: 160px;
+		overflow: auto;
+		margin-top: 9px;
+	}
+	.pairing-list label {
+		display: grid;
+		grid-template-columns: auto 80px 1fr auto;
+		gap: 7px;
+		align-items: center;
+		padding: 7px;
+		border-radius: 3px;
+		background: color-mix(in srgb, var(--panel) 84%, var(--ink));
+	}
+	.pairing-list span,
+	.pairing-list small {
+		color: var(--muted);
+		font-size: 10px;
+	}
+	.pairing-list strong {
+		overflow: hidden;
+		font-size: 12px;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 	.modal-actions {
 		gap: 8px;
 		margin-top: 20px;
@@ -2313,7 +2895,7 @@
 		display: grid;
 		gap: 4px;
 		padding: 11px;
-		background: #f1f0eb;
+		background: var(--surface-soft);
 	}
 	.lane-info-grid span {
 		color: var(--muted);
@@ -2358,7 +2940,7 @@
 	}
 	.related-row:hover {
 		border-color: var(--line);
-		background: #f4f2ed;
+		background: var(--surface-soft);
 	}
 	.related-row-static {
 		cursor: default;
@@ -2379,7 +2961,7 @@
 		grid-column: 2 / -1;
 	}
 	.heart-level {
-		color: #c53e41 !important;
+		color: var(--favorite) !important;
 		font-weight: 800;
 	}
 	.modal-note,
@@ -2434,6 +3016,92 @@
 		border-radius: 3px;
 		font-size: 12px;
 	}
+	@media (min-width: 781px) {
+		.brand-mark {
+			font-size: 14px;
+		}
+		.brand-lockup h1 {
+			font-size: 21px;
+		}
+		.eyebrow,
+		.schedule-corner,
+		.preview-head,
+		.lane-info-grid span {
+			font-size: 12px;
+		}
+		.save-state,
+		.day-tabs button,
+		.warning-bar,
+		.filter-label,
+		.filter-buttons button,
+		.layout-buttons button,
+		.grid-meta,
+		.lane-header,
+		.toast,
+		.now-button,
+		.modal-note,
+		.empty-copy,
+		.field-note,
+		.favorite-editor,
+		.existing-event-picker summary,
+		.lane-info-grid a,
+		.related-row strong {
+			font-size: 14px;
+		}
+		select,
+		.icon-button,
+		.outline-button,
+		.quiet-button,
+		.edit-toggle,
+		.settings-button,
+		.primary-button,
+		.danger-button,
+		.file-button,
+		.settings-choice,
+		.form-grid input,
+		.form-grid select,
+		.bulk-list-label textarea,
+		.transfer-modal textarea,
+		.preview-row input {
+			font-size: 14px;
+		}
+		.toolbar-label,
+		.settings-row,
+		.warning-hint,
+		.form-grid label,
+		.bulk-list-label,
+		.pairing-field,
+		.pairing-list span,
+		.pairing-list small,
+		.related-row span,
+		.related-row small {
+			font-size: 13px;
+		}
+		.settings-range output,
+		.settings-choice strong,
+		.lane-header small,
+		.item-time,
+		.schedule-block em,
+		.opening-marker span,
+		.now-axis-label {
+			font-size: 11px;
+		}
+		.time-axis span {
+			font-size: 13px;
+		}
+		.item-favorite,
+		.copy-item-button,
+		.creation-preview {
+			font-size: 12px;
+		}
+		.schedule-block small {
+			font-size: 12px;
+		}
+		.lane-info-grid strong,
+		.pairing-list strong {
+			font-size: 14px;
+		}
+	}
 	@media (max-width: 780px) {
 		.app-header {
 			align-items: flex-start;
@@ -2460,13 +3128,20 @@
 		}
 		.toolbar {
 			align-items: stretch;
+			grid-template-columns: 1fr;
 		}
-		.toolbar-primary,
-		.toolbar-secondary {
+		.browse-controls,
+		.edit-workspace {
 			width: 100%;
 		}
-		.toolbar-secondary {
+		.edit-workspace {
 			margin-left: 0;
+			align-items: flex-end;
+		}
+		.edit-commands {
+			width: 100%;
+			justify-content: flex-start;
+			flex-wrap: wrap;
 		}
 		.search-field {
 			flex: 1;
@@ -2475,8 +3150,8 @@
 			width: auto;
 			flex: 1;
 		}
-		.toolbar-secondary select,
-		.toolbar-secondary .zoom-control {
+		.browse-controls select,
+		.browse-controls .zoom-control {
 			flex: 1;
 		}
 		.toolbar-label {
@@ -2527,7 +3202,7 @@
 			justify-content: space-around;
 			padding: 8px 7px max(8px, env(safe-area-inset-bottom));
 			border-top: 1px solid var(--line);
-			background: rgba(255, 254, 250, 0.96);
+			background: var(--mobile-dock);
 		}
 		.mobile-dock button {
 			display: grid;

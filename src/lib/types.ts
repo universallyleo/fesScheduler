@@ -35,6 +35,8 @@ export interface FestivalDay {
 	id: string;
 	date: string;
 	openingMinute?: number;
+	displayStartMinute?: number;
+	displayEndMinute?: number;
 	lanes: Lane[];
 	items: ScheduleItem[];
 }
@@ -50,6 +52,7 @@ export interface Festival {
 
 export interface UserPreferences {
 	language: 'ja' | 'en';
+	theme: 'light' | 'dark';
 	snapMinutes: 5 | 10 | 15;
 	timeZoom: number;
 	laneWidth: number;
