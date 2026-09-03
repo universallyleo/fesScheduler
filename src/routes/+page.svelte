@@ -2060,29 +2060,6 @@
 		letter-spacing: 0.01em;
 		white-space: nowrap;
 	}
-	.zoom-control {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		min-height: 36px;
-		padding: 0 10px;
-		border: 1px solid var(--line);
-		border-radius: 4px;
-		background: var(--panel);
-		color: var(--muted);
-	}
-	.zoom-control span {
-		font-size: 16px;
-		line-height: 1;
-	}
-	.zoom-control .toolbar-label {
-		font-size: 11px;
-		line-height: 1;
-	}
-	.zoom-control input {
-		width: 96px;
-		accent-color: var(--teal);
-	}
 	.settings-menu {
 		position: relative;
 	}
@@ -2390,19 +2367,9 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	.lane-header strong,
-	.lane-name-input {
+	.lane-header strong {
 		min-width: 0;
 		flex: 1;
-	}
-	.lane-name-input {
-		align-self: stretch;
-		padding: 3px 5px;
-		border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--line));
-		border-radius: 3px;
-		background: color-mix(in srgb, var(--panel) 82%, transparent);
-		color: inherit;
-		font: inherit;
 	}
 	.lane-header button {
 		flex: 0 0 auto;
@@ -3150,8 +3117,7 @@
 			width: auto;
 			flex: 1;
 		}
-		.browse-controls select,
-		.browse-controls .zoom-control {
+		.browse-controls select {
 			flex: 1;
 		}
 		.toolbar-label {
