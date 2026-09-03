@@ -17,6 +17,8 @@ export interface Lane {
 	venueUrl?: string;
 	openingMinute?: number;
 	color?: string;
+	backgroundColor?: string;
+	booths?: string[];
 }
 
 export interface ScheduleItem {
@@ -26,6 +28,7 @@ export interface ScheduleItem {
 	endMinute: number;
 	artistLabel: string;
 	subContent?: string;
+	boothId?: string;
 	artistEntityIds: string[];
 	favoriteLevel: 0 | 1 | 2 | 3;
 	pairedTokutenItemIds: string[];

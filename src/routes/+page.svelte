@@ -9,7 +9,12 @@
 		readableTextColor,
 		snapMinutes
 	} from '$lib/scheduler';
-	import { cloneFestival, createBlankFestival, SAMPLE_FESTIVAL } from '$lib/sample-data';
+	import {
+		BUNDLED_FESTIVALS,
+		cloneFestival,
+		createBlankFestival,
+		SAMPLE_FESTIVAL
+	} from '$lib/sample-data';
 	import { createTransferDocument, parseTransferDocument } from '$lib/transfer';
 	import {
 		deleteFestival,
@@ -43,6 +48,7 @@
 		zoom: { ja: '縦間隔', en: 'Vertical spacing' },
 		newFestival: { ja: '新しいフェス', en: 'New timetable' },
 		copyTemplate: { ja: 'サンプルをコピー', en: 'Copy bundled sample' },
+		openSample: { ja: 'サンプルを開く', en: 'Open sample' },
 		saved: { ja: '保存済み', en: 'Saved locally' },
 		all: { ja: 'ALL', en: 'ALL' },
 		compact: { ja: '詰めて表示', en: 'Compact' },
@@ -99,12 +105,14 @@
 	};
 	const relatedDelayOptions = [0, 5, 10, 15, 20] as const;
 	const customRelatedDelayOptions = Array.from({ length: 32 }, (_, index) => (index + 5) * 5);
+	const snapOptions: UserPreferences['snapMinutes'][] = [5, 10, 15];
+	const laneTypes: LaneType[] = ['stage', 'tokuten', 'event'];
 
 	const defaults: UserPreferences = {
 		language: 'ja',
 		theme: 'light',
 		snapMinutes: 5,
-		timeZoom: 180,
+		timeZoom: 300,
 		laneWidth: 152,
 		compactFavorites: false,
 		blockColorMode: 'full'
@@ -134,6 +142,7 @@
 	let relatedModalItemId = $state<string | null>(null);
 	let importOpen = $state(false);
 	let importText = $state('');
+	let selectedSampleId = $state(SAMPLE_FESTIVAL.id);
 	let bulkOpen = $state(false);
 	let bulkRowsText = $state('');
 	let bulkStartText = $state('10:00');
@@ -147,12 +156,20 @@
 	let redoStack = $state<Festival[]>([]);
 	let longPressTimer: number | undefined;
 	let scroller = $state<HTMLDivElement>();
+	let horizontalScrollControls = $state({ visible: false, top: 0, left: 0, right: 0 });
 
 	$effect(() => {
 		document.documentElement.dataset.theme = preferences.theme;
 		return () => {
 			delete document.documentElement.dataset.theme;
 		};
+	});
+	$effect(() => {
+		gridHeight;
+		laneColumnTemplate;
+		if (typeof window === 'undefined') return;
+		const frame = window.requestAnimationFrame(updateHorizontalScrollControls);
+		return () => window.cancelAnimationFrame(frame);
 	});
 
 	const day = $derived(
@@ -185,6 +202,13 @@
 	const visibleColumns = $derived(
 		compactActive ? compactColumnCount : Math.max(1, visibleLanes.length)
 	);
+	const laneColumnTemplate = $derived(
+		compactActive
+			? `repeat(${compactColumnCount}, var(--lane-width))`
+			: visibleLanes
+					.map((lane) => `${laneDisplayWidth(lane)}px`)
+					.join(' ')
+	);
 	const gridHeight = $derived(
 		Math.max(520, ((gridRange.endMinute - gridRange.startMinute) / 60) * preferences.timeZoom)
 	);
@@ -193,10 +217,10 @@
 		new Set([...conflicts.sameLane.flat(), ...conflicts.sameArtist.flat()])
 	);
 	const timeTicks = $derived.by(() => {
-		const first = Math.ceil(gridRange.startMinute / 60) * 60;
+		const first = Math.ceil(gridRange.startMinute / 30) * 30;
 		return Array.from(
-			{ length: Math.max(0, Math.floor((gridRange.endMinute - first) / 60) + 1) },
-			(_, index) => first + index * 60
+			{ length: Math.max(0, Math.floor((gridRange.endMinute - first) / 30) + 1) },
+			(_, index) => first + index * 30
 		);
 	});
 	const infoLane = $derived(lanes.find((lane) => lane.id === infoLaneId));
@@ -234,13 +258,42 @@
 		const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
 		return match ? Number(match[1]) * 60 + Number(match[2]) : 0;
 	}
-	function validDisplayMinute(value: string, maxHour: number): number | null {
-		const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
-		if (!match) return null;
-		const hour = Number(match[1]);
-		const minute = Number(match[2]);
+	function normalizeTimeText(value: string, maxHour = 30): string | null {
+		const input = value.trim();
+		let hour: number;
+		let minute: number;
+		const colonMatch = input.match(/^(\d{1,2}):(\d{2})$/);
+		if (colonMatch) {
+			hour = Number(colonMatch[1]);
+			minute = Number(colonMatch[2]);
+		} else if (/^\d{3,4}$/.test(input)) {
+			hour = Number(input.slice(0, -2));
+			minute = Number(input.slice(-2));
+		} else {
+			return null;
+		}
 		if (hour > maxHour || minute > 59 || (hour === maxHour && minute !== 0)) return null;
-		return hour * 60 + minute;
+		return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+	}
+	function normalizeTimeField(
+		event: FocusEvent,
+		commit: (normalized: string) => void,
+		maxHour = 30
+	): void {
+		const input = event.currentTarget as HTMLInputElement;
+		const normalized = normalizeTimeText(input.value, maxHour);
+		if (!normalized) {
+			flash(
+				`時刻はHHMMまたはHH:MM形式（00:00〜${formatMinute(maxHour * 60)}）で入力してください`
+			);
+			return;
+		}
+		input.value = normalized;
+		commit(normalized);
+	}
+	function validDisplayMinute(value: string, maxHour: number): number | null {
+		const normalized = normalizeTimeText(value, maxHour);
+		return normalized ? parseMinute(normalized) : null;
 	}
 	function openFestivalSettings(): void {
 		if (!day) return;
@@ -298,7 +351,8 @@
 			laneDraft.openingMinute = undefined;
 			return;
 		}
-		if (/^\d{1,2}:\d{2}$/.test(value.trim())) laneDraft.openingMinute = parseMinute(value);
+		const normalized = normalizeTimeText(value);
+		if (normalized) laneDraft.openingMinute = parseMinute(normalized);
 	}
 	function laneTypeLabel(type: LaneType): string {
 		return copy[type].ja;
@@ -328,23 +382,120 @@
 	function laneForItem(item: ScheduleItem): Lane | undefined {
 		return lanes.find((lane) => lane.id === item.laneId);
 	}
+	function itemBottomLine(item: ScheduleItem): string {
+		const lane = laneForItem(item);
+		if (lane?.type === 'tokuten' && lane.booths?.length)
+			return item.boothId ?? lane.booths[0] ?? '';
+		return lane?.venueName || item.subContent || lane?.name || '';
+	}
+	function shouldShowItemBottomLine(item: ScheduleItem): boolean {
+		const lane = laneForItem(item);
+		return Boolean(itemBottomLine(item)) && (!itemHasLimitedContent(item) || Boolean(lane?.booths?.length));
+	}
+	function relatedItemsForLane(lane: Lane): ScheduleItem[] {
+		return items.filter((item) => item.id !== editDraft?.id && item.laneId === lane.id);
+	}
+	function relatedItemsForBooth(lane: Lane, booth: string): ScheduleItem[] {
+		return relatedItemsForLane(lane).filter((item) => (item.boothId ?? lane.booths?.[0]) === booth);
+	}
+	function shouldExpandRelatedBranch(candidates: ScheduleItem[]): boolean {
+		const mainContent = editDraft?.artistLabel.trim();
+		const savedRelatedIds = new Set(editDraft?.pairedTokutenItemIds ?? []);
+		return candidates.some(
+			(item) =>
+				(Boolean(mainContent) && item.artistLabel.trim() === mainContent) ||
+				savedRelatedIds.has(item.id) ||
+				Boolean(editDraft && item.pairedTokutenItemIds.includes(editDraft.id))
+		);
+	}
 	function compactItemsForColumn(column: number): ScheduleItem[] {
 		return compactPlacements.filter((entry) => entry.column === column).map((entry) => entry.item);
 	}
+	function displayedItemHeight(item: ScheduleItem): number {
+		return Math.max(24, minuteToY(item.endMinute) - minuteToY(item.startMinute) - 4);
+	}
+	function itemHasLimitedContent(item: ScheduleItem): boolean {
+		return displayedItemHeight(item) < 66;
+	}
 	function itemStyle(item: ScheduleItem): string {
 		const top = minuteToY(item.startMinute);
-		const height = Math.max(24, minuteToY(item.endMinute) - minuteToY(item.startMinute) - 4);
-		const color = laneForItem(item)?.color ?? '#a8adb5';
-		return `top:${top}px;height:${height}px;--item-color:${color};--item-text:${readableTextColor(color)};`;
+		const height = displayedItemHeight(item);
+		const lane = laneForItem(item);
+		const color = lane?.type === 'tokuten' ? 'var(--tokuten-item)' : (lane?.color ?? '#a8adb5');
+		const itemText =
+			lane?.type === 'tokuten'
+				? 'var(--tokuten-item-text)'
+				: readableTextColor(lane?.color ?? '#a8adb5');
+		const duration = item.endMinute - item.startMinute;
+		const mainSize =
+			itemHasLimitedContent(item) && duration >= 20
+				? Math.max(7, Math.min(17, Math.floor(height - 13)))
+				: null;
+		const booths = !compactActive && lane?.type === 'tokuten' ? lane.booths ?? [] : [];
+		const boothIndex = booths.length ? Math.max(0, booths.indexOf(item.boothId ?? booths[0] ?? '')) : 0;
+		const sameStartBooths = new Set(
+			booths.length
+				? items
+						.filter((candidate) => candidate.laneId === item.laneId && candidate.startMinute === item.startMinute)
+						.map((candidate) => candidate.boothId)
+				: []
+		);
+		const hasSimultaneousBooths = sameStartBooths.size > 1;
+		const boothWidth =
+			booths.length <= 1
+				? 1
+				: hasSimultaneousBooths
+					? 1 / booths.length
+					: Math.min(0.62, 1 / booths.length + 0.24);
+		const boothLeft = booths.length > 1 ? (boothIndex * (1 - boothWidth)) / (booths.length - 1) : 0;
+		const boothLayout = booths.length
+			? `left:calc(4px + (100% - 8px) * ${boothLeft});right:auto;width:calc((100% - 8px) * ${boothWidth});--item-z:${item.startMinute};`
+			: '';
+		return `top:${top + 3}px;height:${height}px;--item-color:${color};--item-text:${itemText};${mainSize ? `--item-main-size:${mainSize}px;` : ''}${boothLayout}`;
 	}
 	function copyHandleStyle(item: ScheduleItem): string {
 		const top = minuteToY(item.startMinute);
-		const height = Math.max(24, minuteToY(item.endMinute) - minuteToY(item.startMinute) - 4);
-		return `top:${top + height - 19}px;`;
+		const height = displayedItemHeight(item);
+		return `top:${top + height - 16}px;`;
 	}
 	function laneStyle(lane: Lane): string {
 		const color = lane.color ?? '#a8adb5';
-		return `--lane-color:${color};--lane-icon:${readableTextColor(color)};`;
+		const background = lane.backgroundColor ??
+			(lane.type === 'tokuten' ? 'var(--surface-tokuten)' : 'var(--surface-lane)');
+		return `--lane-color:${color};--lane-background:${background};--lane-icon:${readableTextColor(color)};`;
+	}
+	function updateHorizontalScrollControls(): void {
+		if (!scroller || typeof window === 'undefined') return;
+		const rect = scroller.getBoundingClientRect();
+		const displayedTop = Math.max(0, rect.top);
+		const displayedBottom = Math.min(window.innerHeight, rect.bottom);
+		const visible =
+			scroller.scrollWidth > scroller.clientWidth + 1 &&
+			rect.bottom > window.innerHeight &&
+			displayedBottom - displayedTop > 96;
+		horizontalScrollControls = {
+			visible,
+			top: Math.round((displayedTop + displayedBottom) / 2),
+			left: Math.max(8, Math.round(rect.left + 72)),
+			right: Math.max(8, Math.round(window.innerWidth - rect.right + 10))
+		};
+	}
+	function scrollTimetableHorizontally(direction: -1 | 1): void {
+		if (!scroller) return;
+		scroller.scrollBy({ left: direction * Math.max(180, scroller.clientWidth * 0.65), behavior: 'smooth' });
+	}
+	function laneDisplayWidth(lane: Lane): number {
+		return lane.type === 'tokuten' && (lane.booths?.length ?? 0) > 2
+			? preferences.laneWidth * 1.5
+			: preferences.laneWidth;
+	}
+	function adjustTimeZoom(deltaY: number): void {
+		const direction = Math.sign(deltaY);
+		if (!direction) return;
+		const next = Math.max(144, Math.min(360, preferences.timeZoom - direction * 12));
+		if (next === preferences.timeZoom) return;
+		preferences.timeZoom = next;
+		void savePreferences(preferences);
 	}
 
 	function updateFestival(mutator: (next: Festival) => void): void {
@@ -422,6 +573,8 @@
 		if (!editMode) return;
 		editingItemId = item.id;
 		editDraft = JSON.parse(JSON.stringify(item)) as ScheduleItem;
+		const itemLane = laneForItem(item);
+		if (itemLane?.booths?.length && !editDraft.boothId) editDraft.boothId = itemLane.booths[0];
 		editingItemIsNew = isNew;
 		relatedLaneId = '';
 		relatedDelay = '0';
@@ -445,7 +598,8 @@
 			subContent: '',
 			artistEntityIds: [],
 			favoriteLevel: 0,
-			pairedTokutenItemIds: []
+			pairedTokutenItemIds: [],
+			boothId: item.boothId
 		};
 		updateFestival((next) =>
 			next.days.find((candidate) => candidate.id === selectedDayId)?.items.push(duplicate)
@@ -529,7 +683,8 @@
 				subContent: '',
 				artistEntityIds: [],
 				favoriteLevel: 0,
-				pairedTokutenItemIds: []
+				pairedTokutenItemIds: [],
+				boothId: lanes.find((lane) => lane.id === creating.laneId)?.booths?.[0]
 			};
 			updateFestival((next) =>
 				next.days.find((candidate) => candidate.id === selectedDayId)?.items.push(item)
@@ -557,11 +712,23 @@
 		const originalPairIds = items.find((item) => item.id === draft.id)?.pairedTokutenItemIds ?? [];
 		const relatedDelayMinutes =
 			relatedDelay === 'custom' ? customRelatedDelay : Number.parseInt(relatedDelay, 10);
-		const hasRelatedLane = editingItemIsNew && lanes.some((lane) => lane.id === relatedLaneId);
+		const newRelatedLaneType = laneTypes.find((type) => relatedLaneId === `new:${type}`);
+		const newRelatedLane: Lane | null = newRelatedLaneType
+			? {
+					id: newId(),
+					name: `新しい${laneTypeLabel(newRelatedLaneType)}`,
+					type: newRelatedLaneType,
+					color: ['#ffad0a', '#ef6a56', '#5c9ed6', '#65a989'][lanes.length % 4]
+				}
+			: null;
+		const relatedItemLaneId = newRelatedLane?.id ?? relatedLaneId;
+		const hasRelatedLane =
+			editingItemIsNew &&
+			(Boolean(newRelatedLane) || lanes.some((lane) => lane.id === relatedItemLaneId));
 		const relatedItem: ScheduleItem | null = hasRelatedLane
 			? {
 					id: newId(),
-					laneId: relatedLaneId,
+					laneId: relatedItemLaneId,
 					startMinute: draft.endMinute + relatedDelayMinutes,
 					endMinute:
 						draft.endMinute + relatedDelayMinutes + (draft.endMinute - draft.startMinute),
@@ -569,7 +736,9 @@
 					subContent: '',
 					artistEntityIds: [...draft.artistEntityIds],
 					favoriteLevel: 0,
-					pairedTokutenItemIds: [draft.id]
+					pairedTokutenItemIds: [draft.id],
+					boothId: (newRelatedLane ?? lanes.find((lane) => lane.id === relatedItemLaneId))
+						?.booths?.[0]
 				}
 			: null;
 		if (relatedItem && !draft.pairedTokutenItemIds.includes(relatedItem.id))
@@ -579,6 +748,7 @@
 			const target = targetDay?.items.find((item) => item.id === draft.id);
 			if (target) Object.assign(target, draft);
 			if (targetDay) {
+				if (newRelatedLane) targetDay.lanes.push(newRelatedLane);
 				for (const candidate of targetDay.items) {
 					if (candidate.id === draft.id) continue;
 					if (draft.pairedTokutenItemIds.includes(candidate.id)) {
@@ -604,13 +774,13 @@
 		});
 		closeEditor();
 	}
-	function addLane(): void {
+	function addLane(type: LaneType = 'stage'): void {
 		if (!editMode || !day) return;
 		laneDraftIsNew = true;
 		laneDraft = {
 			id: newId(),
 			name: `新しいレーン ${lanes.length + 1}`,
-			type: 'event',
+			type,
 			color: ['#ffad0a', '#ef6a56', '#5c9ed6', '#65a989'][lanes.length % 4]
 		};
 	}
@@ -632,7 +802,9 @@
 			venueName: laneDraft.venueName?.trim() || undefined,
 			venueUrl: laneDraft.venueUrl?.trim() || undefined,
 			openingMinute: laneDraft.openingMinute,
-			color: laneDraft.color || '#a8adb5'
+			color: laneDraft.color || '#a8adb5',
+			backgroundColor: laneDraft.backgroundColor,
+			booths: laneDraft.type === 'tokuten' ? laneDraft.booths?.filter(Boolean) : undefined
 		};
 		if (!draft.name) {
 			flash('レーン名を入力してください');
@@ -673,15 +845,17 @@
 		void saveFestival(next);
 		void savePreferences({ ...preferences, lastFestivalId: next.id, lastDayId: selectedDayId });
 	}
-	function copyTemplate(): void {
-		const next = cloneFestival(SAMPLE_FESTIVAL);
+	function copyTemplate(templateId = selectedSampleId): void {
+		const template = BUNDLED_FESTIVALS.find((candidate) => candidate.id === templateId);
+		if (!template) return;
+		const next = cloneFestival(template);
 		next.id = newId();
 		next.title = `${next.title}（コピー）`;
 		next.updatedAt = new Date().toISOString();
 		festival = next;
 		selectedDayId = next.days[0]?.id ?? '';
 		void saveFestival(next);
-		flash('サンプル timetable をコピーしました');
+		flash('サンプルをローカルコピーとして開きました');
 	}
 	async function removeFestival(): Promise<void> {
 		if (!window.confirm('このローカル timetable を削除しますか？')) return;
@@ -733,7 +907,13 @@
 		input.value = '';
 	}
 	function generateBulkPreview(): void {
-		const start = parseMinute(bulkStartText);
+		const normalizedStart = normalizeTimeText(bulkStartText);
+		if (!normalizedStart) {
+			flash('開始時刻はHHMMまたはHH:MM形式（00:00〜30:00）で入力してください');
+			return;
+		}
+		bulkStartText = normalizedStart;
+		const start = parseMinute(normalizedStart);
 		bulkPreview = bulkRowsText
 			.split(/\r?\n/)
 			.map((artist) => artist.trim())
@@ -758,7 +938,8 @@
 			subContent: '',
 			artistEntityIds: [],
 			favoriteLevel: 0 as const,
-			pairedTokutenItemIds: []
+			pairedTokutenItemIds: [],
+			boothId: lanes.find((lane) => lane.id === targetLaneId)?.booths?.[0]
 		}));
 		updateFestival((next) =>
 			next.days.find((candidate) => candidate.id === selectedDayId)?.items.push(...additions)
@@ -787,11 +968,21 @@
 
 	onMount(() => {
 		let timer: number | undefined;
+		const updateScrollControls = () => updateHorizontalScrollControls();
+		window.addEventListener('resize', updateScrollControls);
+		window.addEventListener('scroll', updateScrollControls, { passive: true });
+		scroller?.addEventListener('scroll', updateScrollControls, { passive: true });
+		const scrollerObserver = new ResizeObserver(updateScrollControls);
+		if (scroller) scrollerObserver.observe(scroller);
 		void (async () => {
 			const storedPreferences = await loadPreferences();
 			if (storedPreferences) {
 				preferences = { ...defaults, ...storedPreferences };
-				if (storedPreferences.timeZoom === 54) preferences.timeZoom = defaults.timeZoom;
+				if (storedPreferences.timeZoom === 54 || storedPreferences.timeZoom === 180) {
+					preferences.timeZoom = defaults.timeZoom;
+				} else {
+					preferences.timeZoom = Math.max(144, Math.min(360, storedPreferences.timeZoom));
+				}
 			}
 			const stored = await listFestivals();
 			const storedLast = stored.find((candidate) => candidate.id === preferences.lastFestivalId);
@@ -817,9 +1008,14 @@
 			updateNow();
 			timer = window.setInterval(updateNow, 30_000);
 			isLoading = false;
+			window.requestAnimationFrame(updateScrollControls);
 		})();
 		return () => {
 			if (timer) window.clearInterval(timer);
+			window.removeEventListener('resize', updateScrollControls);
+			window.removeEventListener('scroll', updateScrollControls);
+			scroller?.removeEventListener('scroll', updateScrollControls);
+			scrollerObserver.disconnect();
 		};
 	});
 </script>
@@ -861,7 +1057,16 @@
 						preferences.language = preferences.language === 'ja' ? 'en' : 'ja';
 						void savePreferences(preferences);
 					}}>文 / EN</button
-				><button class="outline-button" onclick={copyTemplate}>＋ {t('copyTemplate')}</button>
+				><label class="sample-picker"
+					><span>{t('openSample')}</span><select
+						bind:value={selectedSampleId}
+						onchange={(event) => copyTemplate((event.currentTarget as HTMLSelectElement).value)}
+					>
+						{#each BUNDLED_FESTIVALS as bundledFestival (bundledFestival.id)}
+							<option value={bundledFestival.id}>{bundledFestival.title}</option>
+						{/each}
+					</select></label
+				>
 			</div>
 		</header>
 		<main class="app-main">
@@ -938,26 +1143,40 @@
 							title={t('settings')}
 							onclick={() => (settingsOpen = !settingsOpen)}>⚙ <span class="toolbar-label">{t('settings')}</span></button
 						>{#if settingsOpen}<div class="settings-panel">
+							<fieldset class="settings-row settings-radio-fieldset">
+								<legend>{t('snap')}</legend>
+								<div class="settings-radio-group" aria-label={t('snap')}>
+									{#each snapOptions as minutes}
+										<label class="settings-radio" class:active={preferences.snapMinutes === minutes}>
+											<input
+												type="radio"
+												name="snap-minutes"
+												value={minutes}
+												checked={preferences.snapMinutes === minutes}
+												onchange={() => {
+													preferences.snapMinutes = minutes;
+													void savePreferences(preferences);
+												}}
+											/>
+											<span>{preferences.language === 'ja' ? `${minutes}分` : `${minutes}min`}</span>
+										</label>
+									{/each}
+								</div>
+							</fieldset>
 							<label class="settings-row"
-								><span>{t('snap')}</span><select
-									aria-label={t('snap')}
-									bind:value={preferences.snapMinutes}
-									onchange={() => void savePreferences(preferences)}
-									><option value={5}>{preferences.language === 'ja' ? '5分' : '5min'}</option><option
-										value={10}>{preferences.language === 'ja' ? '10分' : '10min'}</option><option
-										value={15}>{preferences.language === 'ja' ? '15分' : '15min'}</option
-									></select
-								></label
-							><label class="settings-row"
 								><span>{t('zoom')}</span><div class="settings-range"
 									><span aria-hidden="true">↕</span><input
 										type="range"
-										min="72"
-										max="240"
+										min="144"
+										max="360"
 										step="12"
-										aria-label={t('zoom')}
-										bind:value={preferences.timeZoom}
-										onchange={() => void savePreferences(preferences)}
+											aria-label={t('zoom')}
+											bind:value={preferences.timeZoom}
+											onwheel={(event) => {
+												event.preventDefault();
+												adjustTimeZoom(event.deltaY);
+											}}
+											onchange={() => void savePreferences(preferences)}
 									/><output>{preferences.timeZoom}</output></div
 								></label
 							><button
@@ -1022,7 +1241,14 @@
 							↷
 						</button>
 						<button class="primary-button" onclick={startAdd}>＋ {t('add')}</button>
-						<button class="primary-button" onclick={addLane}>＋ {t('addLane')}</button>
+						<div class="lane-add-buttons desktop-lane-actions">
+							<button class="primary-button" onclick={() => addLane('stage')}>＋ {t('stage')}</button>
+							<button class="primary-button" onclick={() => addLane('tokuten')}>＋ {t('tokuten')}</button>
+							<button class="primary-button" onclick={() => addLane('event')}>＋ {t('event')}</button>
+						</div>
+						<button class="primary-button mobile-lane-action" onclick={() => addLane()}>
+							＋ {t('addLane')}
+						</button>
 					</div>
 				{/if}
 			</section>
@@ -1048,7 +1274,7 @@
 				<div
 					class:compact-grid={compactActive}
 					class="schedule-grid"
-					style={`--grid-columns:${visibleColumns};--grid-height:${gridHeight}px;--lane-width:${preferences.laneWidth}px;--header-height:${compactActive ? 0 : 74}px;`}
+					style={`--grid-columns:${visibleColumns};--lane-columns:${laneColumnTemplate};--grid-height:${gridHeight}px;--hour-height:${preferences.timeZoom}px;--hour-offset:${-((gridRange.startMinute % 60) / 60) * preferences.timeZoom}px;--half-hour-height:${preferences.timeZoom / 2}px;--half-hour-offset:${-((gridRange.startMinute % 30) / 60) * preferences.timeZoom}px;--grid-step-height:${(preferences.timeZoom * preferences.snapMinutes) / 60}px;--grid-step-offset:${-((gridRange.startMinute % preferences.snapMinutes) / 60) * preferences.timeZoom}px;--lane-width:${preferences.laneWidth}px;--header-height:${compactActive ? 0 : 74}px;`}
 				>
 					<div class="schedule-corner">TIME</div>
 					{#if !compactActive}{#each visibleLanes as lane (lane.id)}<div
@@ -1056,6 +1282,7 @@
 								style={laneStyle(lane)}
 							>
 								<strong>{lane.name}</strong>
+								{#if lane.booths?.length}<small>{lane.booths.join(' · ')}</small>{/if}
 								{#if editMode}
 									<button
 										class="lane-edit-button"
@@ -1088,7 +1315,7 @@
 						class="lanes-body"
 						role="application"
 						aria-label={t('timetable')}
-						style={`grid-template-columns:repeat(${visibleColumns},var(--lane-width));min-height:${gridHeight}px;`}
+					style={`grid-template-columns:var(--lane-columns);min-height:${gridHeight}px;`}
 						onpointermove={handlePointerMove}
 						onpointerup={handlePointerUp}
 						onpointercancel={handlePointerUp}
@@ -1105,8 +1332,11 @@
 											class:dimmed={!displayItem(item)}
 											class:conflict={conflictIds.has(item.id)}
 											class:partial-color={preferences.blockColorMode === 'partial'}
+											class:compact-content={itemHasLimitedContent(item)}
+											class:editing={editMode}
 											class="schedule-block"
 											style={itemStyle(item)}
+											title={itemHasLimitedContent(item) && item.subContent ? item.subContent : undefined}
 											aria-label={`${item.artistLabel} ${formatMinute(item.startMinute)}–${formatMinute(item.endMinute)}`}
 											onclick={() => cycleItem(item.id)}
 											oncontextmenu={(event) => {
@@ -1121,12 +1351,13 @@
 												<span class="item-favorite">♥{item.favoriteLevel}</span>
 											{/if}
 											<strong>{item.artistLabel}</strong>
-											{#if item.subContent}
+											{#if item.subContent && !itemHasLimitedContent(item)}
 												<small>{item.subContent}</small>
 											{/if}
-											<em>{laneForItem(item)?.venueName ?? ''}</em>
+											{#if shouldShowItemBottomLine(item)}
+												<em>{itemBottomLine(item)}</em>
+											{/if}
 											{#if editMode}
-												<span class="item-edit-cue" aria-hidden="true">✎</span>
 												<span
 													class="resize-handle"
 													role="separator"
@@ -1139,6 +1370,16 @@
 											{/if}
 										</button>
 										{#if editMode}
+											<button
+												class="item-edit-button"
+												style={copyHandleStyle(item)}
+												aria-label={`${item.artistLabel}を${t('edit')}`}
+												onpointerdown={(event) => event.stopPropagation()}
+												onclick={(event) => {
+													event.stopPropagation();
+													openEditor(item);
+												}}
+											>✎</button>
 											<button
 												class="copy-item-button"
 												style={copyHandleStyle(item)}
@@ -1180,10 +1421,13 @@
 										{#each itemForLane(lane.id) as item (item.id)}
 											<button
 												class:dimmed={!displayItem(item)}
-												class:conflict={conflictIds.has(item.id)}
-												class:partial-color={preferences.blockColorMode === 'partial'}
-												class="schedule-block"
-												style={itemStyle(item)}
+											class:conflict={conflictIds.has(item.id)}
+											class:partial-color={preferences.blockColorMode === 'partial'}
+											class:compact-content={itemHasLimitedContent(item)}
+											class:editing={editMode}
+											class="schedule-block"
+											style={itemStyle(item)}
+											title={itemHasLimitedContent(item) && item.subContent ? item.subContent : undefined}
 												aria-label={`${item.artistLabel} ${formatMinute(item.startMinute)}–${formatMinute(item.endMinute)}`}
 												onclick={() => cycleItem(item.id)}
 												oncontextmenu={(event) => {
@@ -1198,12 +1442,13 @@
 													<span class="item-favorite">♥{item.favoriteLevel}</span>
 												{/if}
 												<strong>{item.artistLabel}</strong>
-												{#if item.subContent}
-													<small>{item.subContent}</small>
-												{/if}
-											<em>{lane.venueName ?? ''}</em>
+											{#if item.subContent && !itemHasLimitedContent(item)}
+												<small>{item.subContent}</small>
+											{/if}
+											{#if shouldShowItemBottomLine(item)}
+												<em>{itemBottomLine(item)}</em>
+											{/if}
 											{#if editMode}
-												<span class="item-edit-cue" aria-hidden="true">✎</span>
 												<span
 														class="resize-handle"
 														role="separator"
@@ -1216,6 +1461,16 @@
 												{/if}
 											</button>
 											{#if editMode}
+												<button
+													class="item-edit-button"
+													style={copyHandleStyle(item)}
+													aria-label={`${item.artistLabel}を${t('edit')}`}
+													onpointerdown={(event) => event.stopPropagation()}
+													onclick={(event) => {
+														event.stopPropagation();
+														openEditor(item);
+													}}
+												>✎</button>
 												<button
 													class="copy-item-button"
 													style={copyHandleStyle(item)}
@@ -1240,6 +1495,22 @@
 					</div>
 				</div>
 			</div>
+			{#if horizontalScrollControls.visible}
+				<button
+					class="timetable-scroll-control timetable-scroll-left"
+					style={`top:${horizontalScrollControls.top}px;left:${horizontalScrollControls.left}px`}
+					aria-label="左へスクロール"
+					title="左へスクロール"
+					onclick={() => scrollTimetableHorizontally(-1)}
+				>‹</button>
+				<button
+					class="timetable-scroll-control timetable-scroll-right"
+					style={`top:${horizontalScrollControls.top}px;right:${horizontalScrollControls.right}px`}
+					aria-label="右へスクロール"
+					title="右へスクロール"
+					onclick={() => scrollTimetableHorizontally(1)}
+				>›</button>
+			{/if}
 			{#if isToday()}<button class="now-button" onclick={jumpToNow}>◉ {t('jumpNow')}</button>{/if}
 		</main>
 		<footer class="mobile-dock">
@@ -1284,11 +1555,23 @@
 				</label>
 				<label>
 					表示開始時刻
-					<input inputmode="numeric" placeholder="09:00" bind:value={festivalSettingsDraft.displayStart} />
+					<input
+						inputmode="numeric"
+						placeholder="09:00"
+						bind:value={festivalSettingsDraft.displayStart}
+						onblur={(event) =>
+							normalizeTimeField(event, (value) => (festivalSettingsDraft!.displayStart = value), 24)}
+					/>
 				</label>
 				<label>
 					表示終了時刻
-					<input inputmode="numeric" placeholder="30:00" bind:value={festivalSettingsDraft.displayEnd} />
+					<input
+						inputmode="numeric"
+						placeholder="30:00"
+						bind:value={festivalSettingsDraft.displayEnd}
+						onblur={(event) =>
+							normalizeTimeField(event, (value) => (festivalSettingsDraft!.displayEnd = value))}
+					/>
 				</label>
 			</div>
 			<datalist id="timezone-options">
@@ -1337,22 +1620,30 @@
 					サブコンテンツ
 					<input bind:value={editDraft.subContent} />
 				</label>
+				{#if laneForItem(editDraft)?.booths?.length}
+					<label>
+						ブース
+						<select bind:value={editDraft.boothId}>
+							{#each laneForItem(editDraft)?.booths ?? [] as booth (booth)}
+								<option value={booth}>{booth}</option>
+							{/each}
+						</select>
+					</label>
+				{/if}
 				<label>
 					開始時刻
 					<input
 						value={formatMinute(editDraft.startMinute)}
-						oninput={(event) =>
-							(editDraft!.startMinute = parseMinute(
-								(event.currentTarget as HTMLInputElement).value
-							))}
+						onblur={(event) =>
+							normalizeTimeField(event, (value) => (editDraft!.startMinute = parseMinute(value)))}
 					/>
 				</label>
 				<label>
 					終了時刻
 					<input
 						value={formatMinute(editDraft.endMinute)}
-						oninput={(event) =>
-							(editDraft!.endMinute = parseMinute((event.currentTarget as HTMLInputElement).value))}
+						onblur={(event) =>
+							normalizeTimeField(event, (value) => (editDraft!.endMinute = parseMinute(value)))}
 					/>
 				</label>
 			</div>
@@ -1379,6 +1670,11 @@
 								{#each lanes as lane (lane.id)}
 									<option value={lane.id}>{lane.name}（{laneTypeLabel(lane.type)}）</option>
 								{/each}
+								<optgroup label="新しいレーンを追加">
+									{#each laneTypes as type}
+										<option value={`new:${type}`}>＋ 新しい{laneTypeLabel(type)}</option>
+									{/each}
+								</optgroup>
 							</select>
 						</label>
 						<label>
@@ -1402,20 +1698,53 @@
 						{/if}
 					</div>
 				{/if}
-				<details class="existing-event-picker">
+				<details class="existing-event-picker" open>
 					<summary>既存のイベントを関連付ける</summary>
 					<div class="pairing-list">
-						{#each items.filter((item) => item.id !== editDraft!.id) as relatedItem (relatedItem.id)}
-							<label>
-								<input
-									type="checkbox"
-									checked={editDraft.pairedTokutenItemIds.includes(relatedItem.id)}
-									onchange={() => togglePair(relatedItem.id)}
-								/>
-								<span>{formatMinute(relatedItem.startMinute)}–{formatMinute(relatedItem.endMinute)}</span>
-								<strong>{relatedItem.artistLabel}</strong>
-								<small>{laneForItem(relatedItem)?.name}</small>
-							</label>
+						{#each lanes as relatedLane (relatedLane.id)}
+							{@const laneItems = relatedItemsForLane(relatedLane)}
+							{#if laneItems.length}
+								<details class="related-lane-group" open={shouldExpandRelatedBranch(laneItems)}>
+									<summary><span>{relatedLane.name}</span><small>{laneItems.length}件</small></summary>
+									<div class="related-lane-items">
+										{#if relatedLane.booths?.length}
+											{#each relatedLane.booths as booth (booth)}
+												{@const boothItems = relatedItemsForBooth(relatedLane, booth)}
+												{#if boothItems.length}
+													<details class="related-booth-group" open={shouldExpandRelatedBranch(boothItems)}>
+														<summary>{booth}</summary>
+														<div class="related-booth-items">
+															{#each boothItems as relatedItem (relatedItem.id)}
+																<label>
+																	<input
+																		type="checkbox"
+																		checked={editDraft.pairedTokutenItemIds.includes(relatedItem.id)}
+																		onchange={() => togglePair(relatedItem.id)}
+																	/>
+																	<span>{formatMinute(relatedItem.startMinute)}–{formatMinute(relatedItem.endMinute)}</span>
+																	<strong>{relatedItem.artistLabel}</strong>
+																</label>
+															{/each}
+														</div>
+													</details>
+												{/if}
+											{/each}
+										{:else}
+											{#each laneItems as relatedItem (relatedItem.id)}
+												<label>
+													<input
+														type="checkbox"
+														checked={editDraft.pairedTokutenItemIds.includes(relatedItem.id)}
+														onchange={() => togglePair(relatedItem.id)}
+													/>
+													<span>{formatMinute(relatedItem.startMinute)}–{formatMinute(relatedItem.endMinute)}</span>
+													<strong>{relatedItem.artistLabel}</strong>
+												</label>
+											{/each}
+										{/if}
+									</div>
+								</details>
+							{/if}
 						{/each}
 					</div>
 				</details>
@@ -1456,18 +1785,55 @@
 					{t('laneName')}
 					<input bind:value={laneDraft.name} />
 				</label>
-				<label>
-					{t('laneType')}
-					<select
-						value={laneDraft.type}
-						onchange={(event) =>
-							(laneDraft!.type = (event.currentTarget as HTMLSelectElement).value as LaneType)}
-					>
-						<option value="stage">{laneTypeLabel('stage')}</option>
-						<option value="tokuten">{laneTypeLabel('tokuten')}</option>
-						<option value="event">{laneTypeLabel('event')}</option>
-					</select>
-				</label>
+				<fieldset class="lane-type-field">
+					<legend>{t('laneType')}</legend>
+					<div class="lane-type-options" aria-label={t('laneType')}>
+						{#each laneTypes as type}
+							<label class="lane-type-option" class:active={laneDraft.type === type}>
+								<input
+									type="radio"
+									name="lane-type"
+									value={type}
+									checked={laneDraft.type === type}
+									onchange={() => (laneDraft!.type = type)}
+								/>
+								<span>{laneTypeLabel(type)}</span>
+							</label>
+						{/each}
+					</div>
+				</fieldset>
+				{#if laneDraft.type === 'tokuten'}
+					<fieldset class="booth-field">
+						<legend>複数ブース</legend>
+						<label class="booth-toggle">
+							<input
+								type="checkbox"
+								checked={(laneDraft.booths?.length ?? 0) > 1}
+								onchange={(event) => {
+									laneDraft!.booths = (event.currentTarget as HTMLInputElement).checked
+										? laneDraft!.booths?.length
+											? laneDraft!.booths
+											: ['A', 'B']
+										: undefined;
+								}}
+							/>
+							複数ブースを使う
+						</label>
+						{#if laneDraft.booths?.length}
+							<label class="booth-names">
+								ブース名（カンマ区切り）
+								<input
+									value={laneDraft.booths.join(', ')}
+									oninput={(event) =>
+										(laneDraft!.booths = (event.currentTarget as HTMLInputElement).value
+											.split(',')
+											.map((booth) => booth.trim())
+											.filter(Boolean))}
+								/>
+							</label>
+						{/if}
+					</fieldset>
+				{/if}
 				<label>
 					{t('venue')}
 					<input bind:value={laneDraft.venueName} />
@@ -1477,8 +1843,11 @@
 					<input
 						value={laneDraft.openingMinute === undefined ? '' : formatMinute(laneDraft.openingMinute)}
 						placeholder="10:00"
-						oninput={(event) =>
-							updateLaneOpening((event.currentTarget as HTMLInputElement).value)}
+						onblur={(event) => {
+							const input = event.currentTarget as HTMLInputElement;
+							if (!input.value.trim()) updateLaneOpening('');
+							else normalizeTimeField(event, updateLaneOpening);
+						}}
 					/>
 				</label>
 				<label>
@@ -1682,7 +2051,14 @@
 				>
 			</div>
 			{#if !bulkPreview.length}<div class="form-grid">
-					<label>開始時刻<input bind:value={bulkStartText} /></label><label
+					<label>
+						開始時刻
+						<input
+							bind:value={bulkStartText}
+							onblur={(event) =>
+								normalizeTimeField(event, (value) => (bulkStartText = value))}
+						/>
+					</label><label
 						>1件の長さ（分）<input type="number" min="5" step="5" bind:value={bulkLength} /></label
 					>
 				</div>
@@ -1700,12 +2076,12 @@
 					{#each bulkPreview as row (row.id)}<div class="preview-row">
 							<input bind:value={row.artist} /><input
 								value={formatMinute(row.start)}
-								oninput={(event) =>
-									(row.start = parseMinute((event.currentTarget as HTMLInputElement).value))}
+								onblur={(event) =>
+									normalizeTimeField(event, (value) => (row.start = parseMinute(value)))}
 							/><input
 								value={formatMinute(row.end)}
-								oninput={(event) =>
-									(row.end = parseMinute((event.currentTarget as HTMLInputElement).value))}
+								onblur={(event) =>
+									normalizeTimeField(event, (value) => (row.end = parseMinute(value)))}
 							/>
 						</div>{/each}
 				</div>
@@ -1730,6 +2106,9 @@
 		--surface-selected: #e3f0ed;
 		--surface-grid: #e7e7e4;
 		--surface-lane: #e4e5e2;
+		--surface-tokuten: #c9ccca;
+		--tokuten-item: #d7d9d6;
+		--tokuten-item-text: #1f2a2c;
 		--surface-axis: #eeefec;
 		--surface-corner: #d5d6d2;
 		--surface-lane-header: #ffffff;
@@ -1795,6 +2174,9 @@
 		--surface-selected: #223b3f;
 		--surface-grid: #151c21;
 		--surface-lane: #263037;
+		--surface-tokuten: #4b555b;
+		--tokuten-item: #79837f;
+		--tokuten-item-text: #111918;
 		--surface-axis: #202a30;
 		--surface-corner: #273239;
 		--surface-lane-header: #ffffff;
@@ -1912,6 +2294,18 @@
 	.header-actions {
 		gap: 8px;
 	}
+	.sample-picker {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 800;
+		white-space: nowrap;
+	}
+	.sample-picker select {
+		max-width: 210px;
+	}
 	.theme-toggle {
 		white-space: nowrap;
 	}
@@ -2001,6 +2395,14 @@
 		border: 1px solid var(--line);
 		border-radius: 6px;
 		background: var(--surface-muted);
+	}
+	.lane-add-buttons {
+		display: flex;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+	.mobile-lane-action {
+		display: none;
 	}
 	.edit-workspace-label {
 		padding: 0 4px;
@@ -2097,9 +2499,47 @@
 		font-size: 11px;
 		font-weight: 800;
 	}
-	.settings-row select {
-		width: 100%;
+	.settings-radio-fieldset {
+		min-inline-size: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+	.settings-radio-fieldset legend {
+		padding: 0;
+	}
+	.settings-radio-group {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 5px;
+	}
+	.settings-radio {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
 		min-height: 32px;
+		padding: 0 6px;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--surface-soft);
+		color: var(--ink);
+		cursor: pointer;
+	}
+	.settings-radio.active {
+		border-color: var(--active-line);
+		background: var(--surface-selected);
+		color: var(--teal);
+	}
+	.settings-radio input,
+	.lane-type-option input {
+		margin: 0;
+		accent-color: var(--teal);
+	}
+	.settings-radio:focus-within,
+	.lane-type-option:focus-within {
+		outline: 2px solid color-mix(in srgb, var(--teal) 55%, transparent);
+		outline-offset: 2px;
 	}
 	.settings-range {
 		display: grid;
@@ -2317,9 +2757,34 @@
 		background: var(--surface-grid);
 		scrollbar-color: var(--scrollbar) transparent;
 	}
+	.timetable-scroll-control {
+		position: fixed;
+		z-index: 4500;
+		width: 34px;
+		height: 56px;
+		padding: 0;
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--ink);
+		font: 500 48px/0.9 ui-sans-serif, system-ui, sans-serif;
+		text-shadow: 0 1px 3px var(--surface-grid);
+		opacity: 0.72;
+		transform: translateY(-50%);
+		transition: opacity 0.15s ease, transform 0.15s ease;
+	}
+	.timetable-scroll-control:hover,
+	.timetable-scroll-control:focus-visible {
+		opacity: 1;
+		transform: translateY(-50%) scale(1.08);
+	}
+	.timetable-scroll-control:focus-visible {
+		outline: 2px solid var(--focus);
+		outline-offset: 2px;
+	}
 	.schedule-grid {
 		display: grid;
-		grid-template-columns: 64px repeat(var(--grid-columns), var(--lane-width));
+		grid-template-columns: 64px var(--lane-columns);
 		grid-template-rows: var(--header-height) var(--grid-height);
 		width: max-content;
 		min-width: 100%;
@@ -2403,7 +2868,7 @@
 	.time-axis {
 		position: sticky;
 		left: 0;
-		z-index: 4;
+		z-index: 4000;
 		grid-column: 1;
 		grid-row: 2;
 		background: var(--surface-axis);
@@ -2422,7 +2887,7 @@
 	.now-axis-label {
 		position: absolute;
 		right: 5px;
-		z-index: 2;
+		z-index: 4001;
 		transform: translateY(-50%);
 		padding: 2px 3px;
 		border-radius: 2px;
@@ -2444,7 +2909,7 @@
 		min-width: var(--lane-width);
 		overflow: visible;
 		border-right: 1px solid var(--line-lane);
-		background: var(--surface-lane);
+		background: color-mix(in srgb, var(--lane-background, var(--surface-lane)) 72%, var(--surface-lane));
 	}
 	.grid-lines {
 		position: absolute;
@@ -2454,10 +2919,14 @@
 			linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px),
 			linear-gradient(to bottom, var(--grid-medium) 1px, transparent 1px),
 			linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px);
+		background-position:
+			0 var(--hour-offset),
+			0 var(--half-hour-offset),
+			0 var(--grid-step-offset);
 		background-size:
-			100% 54px,
-			100% 27px,
-			100% 13.5px;
+			100% var(--hour-height),
+			100% var(--half-hour-height),
+			100% var(--grid-step-height);
 	}
 	.opening-marker {
 		position: absolute;
@@ -2500,7 +2969,7 @@
 		position: absolute;
 		right: 4px;
 		left: 4px;
-		z-index: 4;
+		z-index: var(--item-z, 4);
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
@@ -2520,7 +2989,7 @@
 	}
 	.schedule-block:hover,
 	.schedule-block:focus-visible {
-		z-index: 7;
+		z-index: calc(var(--item-z, 4) + 1000);
 		filter: saturate(1.1) brightness(1.03);
 		box-shadow: 0 4px 11px var(--shadow-block-hover);
 	}
@@ -2558,7 +3027,8 @@
 		margin-top: 3px;
 		overflow: hidden;
 		font-size: clamp(12px, 1.2vw, 17px);
-		line-height: 1.08;
+		line-height: 1.2;
+		padding-bottom: 1px;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 3;
 		line-clamp: 3;
@@ -2575,15 +3045,22 @@
 		line-clamp: 2;
 	}
 	.schedule-block em {
-		margin-top: auto;
+		position: absolute;
+		right: 6px;
+		bottom: 4px;
+		left: 6px;
 		overflow: hidden;
 		color: inherit;
 		font-size: 9px;
 		font-style: normal;
 		line-height: 1;
 		opacity: 0.72;
+		text-align: right;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	.schedule-block.editing em {
+		left: 56px;
 	}
 	.resize-handle {
 		position: absolute;
@@ -2593,21 +3070,10 @@
 		height: 7px;
 		cursor: ns-resize;
 	}
-	.item-edit-cue {
-		position: absolute;
-		bottom: 4px;
-		left: 6px;
-		font-size: 12px;
-		font-weight: 800;
-		line-height: 1;
-		opacity: 0.78;
-		pointer-events: none;
-	}
+	.item-edit-button,
 	.copy-item-button {
 		position: absolute;
-		right: 7px;
-		left: auto;
-		z-index: 9;
+		z-index: 3500;
 		width: 22px;
 		height: 17px;
 		padding: 0;
@@ -2619,6 +3085,15 @@
 		line-height: 1;
 		box-shadow: 0 1px 3px var(--shadow-control);
 	}
+	.item-edit-button {
+		left: 6px;
+		font-weight: 800;
+	}
+	.copy-item-button {
+		left: 31px;
+	}
+	.item-edit-button:hover,
+	.item-edit-button:focus-visible,
 	.copy-item-button:hover,
 	.copy-item-button:focus-visible {
 		border-color: var(--copy-ink);
@@ -2674,7 +3149,7 @@
 	.modal-backdrop {
 		position: fixed;
 		inset: 0;
-		z-index: 40;
+		z-index: 5000;
 		display: grid;
 		place-items: center;
 		padding: 16px;
@@ -2689,6 +3164,15 @@
 		border-radius: 7px;
 		background: var(--panel);
 		box-shadow: 0 24px 60px var(--shadow-modal);
+	}
+	.editor-modal {
+		width: min(680px, 100%);
+		max-height: calc(100vh - 32px);
+	}
+	.editor-modal .pairing-field,
+	.editor-modal .pairing-list {
+		max-height: none;
+		overflow: visible;
 	}
 	.modal-heading {
 		display: flex;
@@ -2727,6 +3211,85 @@
 	}
 	.lane-form-grid {
 		grid-template-columns: 1fr 1fr;
+	}
+	.lane-type-field {
+		display: grid;
+		gap: 6px;
+		min-inline-size: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 800;
+	}
+	.lane-type-field legend {
+		padding: 0;
+	}
+	.lane-type-options {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 6px;
+	}
+	.lane-type-option {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 5px;
+		min-height: 40px;
+		padding: 6px;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--surface-soft);
+		color: var(--ink);
+		cursor: pointer;
+	}
+	.lane-type-option.active {
+		border-color: var(--active-line);
+		background: var(--surface-selected);
+		color: var(--teal);
+	}
+	.booth-field {
+		display: grid;
+		gap: 8px;
+		min-inline-size: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 800;
+	}
+	.booth-field legend {
+		padding: 0;
+	}
+	.booth-toggle {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		min-height: 40px;
+		padding: 0 10px;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--surface-soft);
+		color: var(--ink);
+		cursor: pointer;
+	}
+	.booth-toggle input {
+		margin: 0;
+		accent-color: var(--teal);
+	}
+	.booth-names {
+		display: grid;
+		gap: 6px;
+	}
+	.booth-names input {
+		width: 100%;
+		padding: 10px;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--panel);
+		color: var(--ink);
 	}
 	.color-field > span {
 		display: flex;
@@ -2821,14 +3384,52 @@
 	}
 	.pairing-list {
 		display: grid;
-		gap: 4px;
+		gap: 8px;
 		max-height: 160px;
 		overflow: auto;
 		margin-top: 9px;
 	}
+	.related-lane-group,
+	.related-booth-group {
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: color-mix(in srgb, var(--panel) 80%, var(--surface-soft));
+	}
+	.related-lane-group > summary,
+	.related-booth-group > summary {
+		cursor: pointer;
+		font-weight: 800;
+	}
+	.related-lane-group > summary {
+		display: flex;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 8px 10px;
+		color: var(--ink);
+	}
+	.related-lane-group > summary small {
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 700;
+	}
+	.related-lane-items {
+		display: grid;
+		gap: 6px;
+		padding: 0 8px 8px;
+	}
+	.related-booth-group > summary {
+		padding: 7px 8px;
+		color: var(--muted);
+		font-size: 12px;
+	}
+	.related-booth-items {
+		display: grid;
+		gap: 4px;
+		padding: 0 6px 6px;
+	}
 	.pairing-list label {
 		display: grid;
-		grid-template-columns: auto 80px 1fr auto;
+		grid-template-columns: auto 80px minmax(0, 1fr);
 		gap: 7px;
 		align-items: center;
 		padding: 7px;
@@ -2845,6 +3446,19 @@
 		font-size: 12px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	.schedule-block.compact-content {
+		padding: 2px 5px;
+	}
+	.schedule-block.compact-content .item-time {
+		font-size: 8px;
+	}
+	.schedule-block.compact-content strong {
+		margin-top: 1px;
+		font-size: var(--item-main-size, clamp(12px, 1.2vw, 17px));
+		line-height: 1.14;
+		-webkit-line-clamp: 1;
+		line-clamp: 1;
 	}
 	.modal-actions {
 		gap: 8px;
@@ -2984,6 +3598,9 @@
 		font-size: 12px;
 	}
 	@media (min-width: 781px) {
+		.timetable-scroller {
+			max-height: none;
+		}
 		.brand-mark {
 			font-size: 14px;
 		}
@@ -3083,6 +3700,12 @@
 		.header-actions .outline-button {
 			display: none;
 		}
+		.sample-picker span {
+			display: none;
+		}
+		.sample-picker select {
+			max-width: 150px;
+		}
 		.app-main {
 			padding: 20px 10px 84px;
 		}
@@ -3109,6 +3732,12 @@
 			width: 100%;
 			justify-content: flex-start;
 			flex-wrap: wrap;
+		}
+		.desktop-lane-actions {
+			display: none;
+		}
+		.mobile-lane-action {
+			display: inline-flex;
 		}
 		.search-field {
 			flex: 1;
@@ -3153,7 +3782,7 @@
 			max-height: min(calc(100vh - 300px), 540px);
 		}
 		.schedule-grid {
-			grid-template-columns: 54px repeat(var(--grid-columns), var(--lane-width));
+			grid-template-columns: 54px var(--lane-columns);
 		}
 		.schedule-corner {
 			font-size: 9px;

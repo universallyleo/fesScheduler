@@ -62,7 +62,8 @@ export function detectConflicts(items: ScheduleItem[]): ConflictReport {
 			const left = items[leftIndex];
 			const right = items[rightIndex];
 			if (!left || !right || !overlaps(left, right)) continue;
-			if (left.laneId === right.laneId) sameLane.push([left.id, right.id]);
+			if (left.laneId === right.laneId && left.boothId === right.boothId)
+				sameLane.push([left.id, right.id]);
 			if (normalizeArtistLabel(left.artistLabel) === normalizeArtistLabel(right.artistLabel)) {
 				sameArtist.push([left.id, right.id]);
 			}

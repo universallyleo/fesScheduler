@@ -25,7 +25,10 @@ function isLane(value: unknown): value is Lane {
 	return (
 		typeof lane.id === 'string' &&
 		typeof lane.name === 'string' &&
-		['stage', 'tokuten', 'event'].includes(lane.type ?? '')
+		['stage', 'tokuten', 'event'].includes(lane.type ?? '') &&
+		(lane.backgroundColor === undefined || typeof lane.backgroundColor === 'string') &&
+		(lane.booths === undefined ||
+			(Array.isArray(lane.booths) && lane.booths.every((booth) => typeof booth === 'string')))
 	);
 }
 
@@ -41,7 +44,8 @@ function isItem(value: unknown): value is ScheduleItem {
 		typeof item.artistLabel === 'string' &&
 		Array.isArray(item.artistEntityIds) &&
 		[0, 1, 2, 3].includes(item.favoriteLevel ?? -1) &&
-		Array.isArray(item.pairedTokutenItemIds)
+		Array.isArray(item.pairedTokutenItemIds) &&
+		(item.boothId === undefined || typeof item.boothId === 'string')
 	);
 }
 
