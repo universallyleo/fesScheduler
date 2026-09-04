@@ -107,16 +107,19 @@ export function getRelatedItemIds(
 ): string[] {
 	const selected = items.find((item) => item.id === selectedItemId);
 	if (!selected) return [];
-	const relatedIds = new Set<string>();
+	const pairedItemIds = new Set(selected.pairedTokutenItemIds);
+	const relatedArtistEntityIds = new Set<string>();
 	for (const entityId of selected.artistEntityIds) {
 		for (const relatedEntityId of relatedEntityIds(entityId, entities))
-			relatedIds.add(relatedEntityId);
+			relatedArtistEntityIds.add(relatedEntityId);
 	}
 	return items
 		.filter(
 			(item) =>
 				item.id !== selectedItemId &&
-				item.artistEntityIds.some((entityId) => relatedIds.has(entityId))
+				(pairedItemIds.has(item.id) ||
+					item.pairedTokutenItemIds.includes(selectedItemId) ||
+					item.artistEntityIds.some((entityId) => relatedArtistEntityIds.has(entityId)))
 		)
 		.map((item) => item.id);
 }
