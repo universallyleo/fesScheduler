@@ -7,26 +7,24 @@ type GridInteractionOptions = {
 	getCompactActive: () => boolean;
 	getLanes: () => Lane[];
 	getPreferences: () => UserPreferences;
-	getSelectedDayId: () => string;
 	minuteFromPointer: (event: PointerEvent, target: HTMLElement) => number;
 	updateFestival: (mutator: (next: Festival) => void) => void;
-	newId: () => string;
-	openItem: (item: ScheduleItem, isNew: boolean) => void;
+	openNew: (options: {
+		laneId: string;
+		startMinute: number;
+		endMinute: number;
+		lockDestination: boolean;
+	}) => void;
 	openRelated: (item: ScheduleItem) => void;
 	notify: (message: string) => void;
+	reorderLanes: (sourceId: string, targetId: string) => void;
 };
 
 export function createGridInteractionController(options: GridInteractionOptions) {
-	let addMode = $state(false);
-	let addLaneId = $state('');
 	let dragging = $state<DragState>(null);
 	let creating = $state<CreateState>(null);
+	let laneReorder = $state<{ sourceLaneId: string; targetLaneId: string } | null>(null);
 	let longPressTimer: number | undefined;
-
-	function clearAddMode(): void {
-		addMode = false;
-		creating = null;
-	}
 
 	function beginItemPointer(
 		event: PointerEvent,
@@ -38,7 +36,9 @@ export function createGridInteractionController(options: GridInteractionOptions)
 			return;
 		}
 		if (options.getCompactActive()) return;
+		event.preventDefault();
 		event.stopPropagation();
+		(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
 		dragging = {
 			kind,
 			itemId: item.id,
@@ -49,7 +49,7 @@ export function createGridInteractionController(options: GridInteractionOptions)
 	}
 
 	function beginCreate(event: PointerEvent, laneId: string): void {
-		if (!options.getEditMode() || !addMode || options.getCompactActive() || event.button !== 0) return;
+		if (!options.getEditMode() || options.getCompactActive() || event.button !== 0) return;
 		const startMinute = options.minuteFromPointer(event, event.currentTarget as HTMLElement);
 		creating = { laneId, startMinute, currentMinute: startMinute + 15 };
 	}
@@ -61,13 +61,12 @@ export function createGridInteractionController(options: GridInteractionOptions)
 			return;
 		}
 		if (!dragging) return;
-		const preferences = options.getPreferences();
 		const delta = snapMinutes(
-			((event.clientY - dragging.originY) / preferences.timeZoom) * 60,
-			preferences.snapMinutes
+			((event.clientY - dragging.originY) / options.getPreferences().timeZoom) * 60,
+			5
 		);
-		const nextStart = Math.max(0, dragging.startMinute + delta);
-		const nextEnd = Math.max(nextStart + preferences.snapMinutes, dragging.endMinute + delta);
+		const nextStart = Math.max(0, snapMinutes(dragging.startMinute + delta, 5));
+		const nextEnd = Math.max(nextStart + 5, snapMinutes(dragging.endMinute + delta, 5));
 		options.updateFestival((next) => {
 			const targetItem = next.days
 				.flatMap((day) => day.items)
@@ -95,52 +94,68 @@ export function createGridInteractionController(options: GridInteractionOptions)
 			dragging = null;
 			return;
 		}
-		const preferences = options.getPreferences();
 		const startMinute = Math.min(creation.startMinute, creation.currentMinute);
 		const endMinute = Math.max(
-			startMinute + preferences.snapMinutes,
+			startMinute + 5,
 			Math.max(creation.startMinute, creation.currentMinute)
 		);
-		const item: ScheduleItem = {
-			id: options.newId(),
+		options.openNew({
 			laneId: creation.laneId,
 			startMinute,
 			endMinute,
-			artistLabel: '新しい項目',
-			subContent: '',
-			artistEntityIds: [],
-			favoriteLevel: 0,
-			pairedTokutenItemIds: [],
-			boothId: options.getLanes().find((lane) => lane.id === creation.laneId)?.booths?.[0]
-		};
-		options.updateFestival((next) =>
-			next.days.find((day) => day.id === options.getSelectedDayId())?.items.push(item)
-		);
-		clearAddMode();
-		options.openItem(item, true);
+			lockDestination: true
+		});
+		creating = null;
 	}
 
-	function startAdd(): void {
-		addMode = true;
-		addLaneId = options.getLanes()[0]?.id ?? '';
-		options.notify('レーンを選んで、空いている時間をドラッグしてください');
+	function beginLaneReorder(event: PointerEvent, laneId: string): void {
+		if (!options.getEditMode() || options.getCompactActive() || event.button !== 0) return;
+		if ((event.target as HTMLElement | null)?.closest('button')) return;
+		event.preventDefault();
+		laneReorder = { sourceLaneId: laneId, targetLaneId: laneId };
+	}
+
+	function setLaneReorderTarget(laneId: string): void {
+		if (!laneReorder) return;
+		laneReorder.targetLaneId = laneId;
+	}
+
+	function finishLaneReorder(): void {
+		const reorder = laneReorder;
+		laneReorder = null;
+		if (!reorder || reorder.sourceLaneId === reorder.targetLaneId) return;
+		options.reorderLanes(reorder.sourceLaneId, reorder.targetLaneId);
+	}
+
+	function moveLaneBy(laneId: string, direction: -1 | 1): void {
+		if (!options.getEditMode() || options.getCompactActive()) return;
+		const lanes = options.getLanes();
+		const sourceIndex = lanes.findIndex((lane) => lane.id === laneId);
+		const target = lanes[sourceIndex + direction];
+		if (!target) return;
+		options.reorderLanes(laneId, target.id);
 	}
 
 	return {
-		get addMode() {
-			return addMode;
-		},
 		get addLaneId() {
-			return addLaneId;
+			return options.getLanes()[0]?.id ?? '';
 		},
 		get creating() {
 			return creating;
 		},
-		clearAddMode,
 		beginItemPointer,
 		beginCreate,
 		handlePointerMove,
 		handlePointerUp,
-		startAdd
+		beginLaneReorder,
+		setLaneReorderTarget,
+		finishLaneReorder,
+		moveLaneBy,
+		get reorderingLaneId() {
+			return laneReorder?.sourceLaneId ?? null;
+		},
+		get reorderTargetLaneId() {
+			return laneReorder?.targetLaneId ?? null;
+		}
 	};
 }

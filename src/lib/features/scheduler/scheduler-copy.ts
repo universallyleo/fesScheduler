@@ -1,6 +1,8 @@
 export const schedulerCopy = {
 	timetable: { ja: 'タイムテーブル', en: 'Timetable' },
 	edit: { ja: '編集', en: 'Edit' },
+	startEdit: { ja: '編集を開始', en: 'Start editing' },
+	exitEdit: { ja: '終了', en: 'Exit' },
 	editTools: { ja: '編集ツール', en: 'Editing tools' },
 	add: { ja: '項目を追加', en: 'Add item(s)' },
 	search: { ja: 'アーティスト検索', en: 'Search artists' },
@@ -25,7 +27,7 @@ export const schedulerCopy = {
 	laneType: { ja: 'レーン種別', en: 'Lane type' },
 	stage: { ja: 'ステージ', en: 'Stage' },
 	tokuten: { ja: '特典会', en: 'Meet & greet' },
-	event: { ja: 'イベント', en: 'Event' },
+	event: { ja: 'イベント・インフォ', en: 'Event' },
 	venue: { ja: '会場', en: 'Venue' },
 	venueUrl: { ja: '会場 URL', en: 'Venue URL' },
 	opening: { ja: '開場時刻', en: 'Opening time' },

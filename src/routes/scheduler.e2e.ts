@@ -4,7 +4,7 @@ test('opens the bundled timetable and edits an item', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'タイムテーブル' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'タイムテーブルを編集' }).click();
+	await page.getByRole('button', { name: '編集を開始' }).click();
 	await page.getByRole('button', { name: /I.mew/ }).first().dblclick();
 	await expect(page.getByRole('dialog')).toBeVisible();
 

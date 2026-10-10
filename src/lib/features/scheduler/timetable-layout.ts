@@ -23,8 +23,27 @@ export function normalizeTimeText(value: string, maxHour = 30): string | null {
 	return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
+export function normalizeToFiveMinuteTime(value: string, maxHour = 30): string | null {
+	const normalized = normalizeTimeText(value, maxHour);
+	if (!normalized) return null;
+	const minute = Math.min(
+		maxHour * 60,
+		Math.max(0, Math.round(parseMinute(normalized) / 5) * 5)
+	);
+	return formatMinute(minute);
+}
+
 export function minuteToY(minute: number, startMinute: number, timeZoom: number): number {
 	return ((minute - startMinute) / 60) * timeZoom;
+}
+
+export function currentTimeScrollTop(
+	currentMinute: number,
+	gridStartMinute: number,
+	timeZoom: number,
+	viewportHeight: number
+): number {
+	return Math.max(0, minuteToY(currentMinute, gridStartMinute, timeZoom) - viewportHeight / 2);
 }
 
 export function minuteFromPointer(

@@ -1,4 +1,10 @@
 import type { Festival, Lane, LaneType, ScheduleItem } from '$lib/types';
+import { buildRepeatPreview, buildRepeatedItemSpecs, countRepeatNames, maximumRepeatCount } from './repeat-items';
+import {
+	buildMultiBoothRepeat,
+	maximumMultiBoothRepeatCount,
+	type MultiBoothRepeatInput
+} from './multi-booth-repeat';
 
 type ItemEditorOptions = {
 	getItems: () => ScheduleItem[];
@@ -21,24 +27,133 @@ export function createItemEditorController(options: ItemEditorOptions) {
 	let relatedLaneId = $state('');
 	let relatedDelay = $state('0');
 	let customRelatedDelay = $state(25);
+	let repeatEnabled = $state(false);
+	let repeatCount = $state(1);
+	let repeatRestMinutes = $state(5);
+	let repeatItemsBeforeRest = $state(1);
+	let repeatNamesText = $state('');
+	let destinationLocked = $state(false);
+	let copyAcrossBooths = $state(false);
+	let boothOffsets = $state<number[]>([5]);
+	let boothRepeatNames = $state<Record<string, string>>({});
 
-	function open(item: ScheduleItem, openingNew = false): void {
+	function repeatInput(namesText = repeatNamesText) {
+		return {
+			startMinute: draft?.startMinute ?? 0,
+			endMinute: draft?.endMinute ?? 0,
+			fallbackName: draft?.artistLabel ?? '新しい項目',
+			namesText,
+			repeatCount,
+			restMinutes: repeatRestMinutes,
+			itemsBeforeRest: repeatItemsBeforeRest
+		};
+	}
+
+	function selectedLane(): Lane | undefined {
+		return options.getLanes().find((lane) => lane.id === draft?.laneId);
+	}
+
+	function multiBoothInput(): MultiBoothRepeatInput | null {
+		const lane = selectedLane();
+		if (!lane || lane.type !== 'tokuten' || (lane.booths?.length ?? 0) < 2) return null;
+		return {
+			repeat: repeatInput(),
+			repeatByBooth: Object.fromEntries(
+				(lane.booths ?? []).map((booth) => [booth, repeatInput(boothRepeatNames[booth] ?? repeatNamesText)])
+			),
+			booths: lane.booths ?? [],
+			enteredOffsets: boothOffsets,
+			copyAcrossBooths
+		};
+	}
+
+	function clampRepeatCount(): void {
+		const multi = multiBoothInput();
+		const maximum = multi ? maximumMultiBoothRepeatCount(multi) : maximumRepeatCount(repeatInput());
+		repeatCount = Math.max(1, Math.min(repeatCount, Math.max(1, maximum)));
+	}
+
+	function open(item: ScheduleItem, openingNew = false, lockDestination = false): void {
 		if (!options.isEditingEnabled()) return;
 		itemId = item.id;
 		draft = JSON.parse(JSON.stringify(item)) as ScheduleItem;
 		const lane = options.getLanes().find((candidate) => candidate.id === item.laneId);
+		if (openingNew && !draft.itemType) draft.itemType = lane?.type;
 		if (lane?.booths?.length && !draft.boothId) draft.boothId = lane.booths[0];
 		isNew = openingNew;
+		destinationLocked = lockDestination;
 		relatedLaneId = '';
 		relatedDelay = '0';
 		customRelatedDelay = 25;
+		repeatEnabled = false;
+		repeatCount = 1;
+		repeatRestMinutes = 5;
+		repeatItemsBeforeRest = 1;
+		repeatNamesText = '';
+		copyAcrossBooths = false;
+		boothOffsets = [5];
+		boothRepeatNames = {};
+	}
+
+	function openNew({
+		laneId = '',
+		startMinute = 600,
+		endMinute = 615,
+		lockDestination = false
+	}: {
+		laneId?: string;
+		startMinute?: number;
+		endMinute?: number;
+		lockDestination?: boolean;
+	} = {}): void {
+		if (!options.isEditingEnabled()) return;
+		const lane = options.getLanes().find((candidate) => candidate.id === laneId);
+		itemId = options.newId();
+		draft = {
+			id: itemId,
+			laneId,
+			startMinute,
+			endMinute,
+			artistLabel: '新しい項目',
+			subContent: '',
+			artistEntityIds: [],
+			favoriteLevel: 0,
+			pairedTokutenItemIds: [],
+			boothId: lane?.booths?.[0],
+			itemType: lane?.type
+		};
+		isNew = true;
+		destinationLocked = lockDestination;
+		relatedLaneId = '';
+		relatedDelay = '0';
+		customRelatedDelay = 25;
+		repeatEnabled = false;
+		repeatCount = 1;
+		repeatRestMinutes = 5;
+		repeatItemsBeforeRest = 1;
+		repeatNamesText = '';
+		copyAcrossBooths = false;
+		boothOffsets = [5];
+		boothRepeatNames = {};
 	}
 
 	function close(): void {
 		itemId = null;
 		draft = null;
 		isNew = false;
+		destinationLocked = false;
 		relatedLaneId = '';
+	}
+
+	function setDestinationLaneId(laneId: string): void {
+		if (!draft || destinationLocked) return;
+		draft.laneId = laneId;
+		const lane = options.getLanes().find((candidate) => candidate.id === laneId);
+		if (!lane) return;
+		draft.itemType = lane.type;
+		draft.boothId = lane.booths?.[0];
+		draft.color = undefined;
+		boothRepeatNames = {};
 	}
 
 	function duplicate(item: ScheduleItem): void {
@@ -54,7 +169,9 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			artistEntityIds: [],
 			favoriteLevel: 0,
 			pairedTokutenItemIds: [],
-			boothId: item.boothId
+			boothId: item.boothId,
+			itemType: item.itemType ?? options.getLanes().find((lane) => lane.id === item.laneId)?.type,
+			color: item.color
 		};
 		options.updateFestival((next) =>
 			next.days.find((day) => day.id === options.getSelectedDayId())?.items.push(duplicate)
@@ -74,9 +191,22 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			options.notify('終了時刻は開始時刻より後にしてください');
 			return;
 		}
-		const savedDraft = JSON.parse(JSON.stringify(draft)) as ScheduleItem;
-		const items = options.getItems();
 		const lanes = options.getLanes();
+		const destinationLaneId = draft.laneId;
+		if (isNew && !lanes.some((lane) => lane.id === destinationLaneId)) {
+			options.notify('追加先レーンを選択してください');
+			return;
+		}
+		const multi = isNew && repeatEnabled ? multiBoothInput() : null;
+		const repeatedSpecs = isNew && repeatEnabled
+			? multi?.copyAcrossBooths
+				? buildMultiBoothRepeat(multi).items
+				: buildRepeatedItemSpecs(repeatInput())
+			: [];
+		const savedDraft = JSON.parse(JSON.stringify(draft)) as ScheduleItem;
+		const firstSpec = repeatedSpecs[0];
+		if (firstSpec) Object.assign(savedDraft, firstSpec);
+		const items = options.getItems();
 		const originalPairIds = items.find((item) => item.id === savedDraft.id)?.pairedTokutenItemIds ?? [];
 		const delayMinutes = relatedDelay === 'custom' ? customRelatedDelay : Number.parseInt(relatedDelay, 10);
 		const newRelatedLaneType = laneTypes.find((type) => relatedLaneId === `new:${type}`);
@@ -91,6 +221,7 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		const relatedItemLaneId = newRelatedLane?.id ?? relatedLaneId;
 		const shouldCreateRelatedItem =
 			isNew && (Boolean(newRelatedLane) || lanes.some((lane) => lane.id === relatedItemLaneId));
+		const relatedLane = newRelatedLane ?? lanes.find((lane) => lane.id === relatedItemLaneId);
 		const relatedItem: ScheduleItem | null = shouldCreateRelatedItem
 			? {
 					id: options.newId(),
@@ -102,7 +233,8 @@ export function createItemEditorController(options: ItemEditorOptions) {
 					artistEntityIds: [...savedDraft.artistEntityIds],
 					favoriteLevel: 0,
 					pairedTokutenItemIds: [savedDraft.id],
-					boothId: (newRelatedLane ?? lanes.find((lane) => lane.id === relatedItemLaneId))?.booths?.[0]
+					boothId: relatedLane?.booths?.[0],
+					itemType: relatedLane?.type
 				}
 			: null;
 		if (relatedItem && !savedDraft.pairedTokutenItemIds.includes(relatedItem.id)) {
@@ -112,6 +244,17 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			const targetDay = next.days.find((day) => day.id === options.getSelectedDayId());
 			const target = targetDay?.items.find((item) => item.id === savedDraft.id);
 			if (target) Object.assign(target, savedDraft);
+			else if (targetDay && isNew) targetDay.items.push(savedDraft);
+			if (targetDay && repeatedSpecs.length > 1) {
+				for (const spec of repeatedSpecs.slice(1)) {
+					targetDay.items.push({
+						...savedDraft,
+						id: options.newId(),
+						...spec,
+						pairedTokutenItemIds: []
+					});
+				}
+			}
 			if (!targetDay) return;
 			if (newRelatedLane) targetDay.lanes.push(newRelatedLane);
 			for (const candidate of targetDay.items) {
@@ -159,10 +302,94 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		get customRelatedDelay() {
 			return customRelatedDelay;
 		},
+		get repeatEnabled() {
+			return repeatEnabled;
+		},
+		get repeatCount() {
+			return repeatCount;
+		},
+		get repeatRestMinutes() {
+			return repeatRestMinutes;
+		},
+		get repeatItemsBeforeRest() {
+			return repeatItemsBeforeRest;
+		},
+		get repeatNamesText() {
+			return repeatNamesText;
+		},
+		get destinationLocked() {
+			return destinationLocked;
+		},
+		get copyAcrossBooths() {
+			return copyAcrossBooths;
+		},
+		get boothOffsets() {
+			return boothOffsets;
+		},
+		get boothRepeatNames() {
+			const booths = selectedLane()?.booths ?? [];
+			return Object.fromEntries(booths.map((booth) => [booth, boothRepeatNames[booth] ?? repeatNamesText]));
+		},
+		get multiBoothPreview() {
+			const multi = multiBoothInput();
+			return multi?.copyAcrossBooths ? buildMultiBoothRepeat(multi).preview : [];
+		},
+		get maximumRepeatCount() {
+			const multi = multiBoothInput();
+			return Math.max(1, multi ? maximumMultiBoothRepeatCount(multi) : maximumRepeatCount(repeatInput()));
+		},
+		get repeatPreview() {
+			return buildRepeatPreview(repeatInput());
+		},
 		setRelatedLaneId: (value: string) => (relatedLaneId = value),
+		setDestinationLaneId,
 		setRelatedDelay: (value: string) => (relatedDelay = value),
 		setCustomRelatedDelay: (value: number) => (customRelatedDelay = value),
+		setRepeatEnabled: (value: boolean) => (repeatEnabled = value),
+		setRepeatCount: (value: number) => {
+			repeatCount = value;
+			clampRepeatCount();
+		},
+		setRepeatRestMinutes: (value: number) => {
+			repeatRestMinutes = value;
+			clampRepeatCount();
+		},
+		setRepeatItemsBeforeRest: (value: number) => {
+			repeatItemsBeforeRest = value;
+			clampRepeatCount();
+		},
+		setRepeatNamesText: (value: string) => {
+			repeatNamesText = value;
+			repeatCount = Math.max(repeatCount, countRepeatNames(value));
+			clampRepeatCount();
+		},
+		setCopyAcrossBooths: (value: boolean) => {
+			copyAcrossBooths = value;
+			if (value && !boothOffsets.length) boothOffsets = [5];
+			if (value) {
+				const booths = selectedLane()?.booths ?? [];
+				boothRepeatNames = Object.fromEntries(
+					booths.map((booth) => [booth, boothRepeatNames[booth] ?? repeatNamesText])
+				);
+			}
+			clampRepeatCount();
+		},
+		setBoothRepeatNames: (boothId: string, value: string) => {
+			boothRepeatNames = { ...boothRepeatNames, [boothId]: value };
+			repeatCount = Math.max(repeatCount, countRepeatNames(value));
+			clampRepeatCount();
+		},
+		setBoothOffsets: (value: number[]) => {
+			boothOffsets = value.map((offset) => Math.max(0, Math.round(offset / 5) * 5));
+			clampRepeatCount();
+		},
+		removeBoothOffset: (index: number) => {
+			if (boothOffsets.length <= 1) return;
+			boothOffsets = boothOffsets.filter((_, offsetIndex) => offsetIndex !== index);
+			clampRepeatCount();
+		},
 		open,
+		openNew,
 		close,
 		duplicate,
 		togglePair,

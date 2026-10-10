@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import LaneHeader from '$lib/components/LaneHeader.svelte';
 	import ScheduleItemBlock from '$lib/components/ScheduleItemBlock.svelte';
-	import type { FestivalDay, Lane, ScheduleItem, UserPreferences } from '$lib/types';
+	import { currentTimeScrollTop } from './timetable-layout';
+	import type { FestivalDay, Lane, LaneType, ScheduleItem, UserPreferences } from '$lib/types';
 	import type { CreateState, FavoriteFilter } from '$lib/ui-types';
 	import type { SchedulerCopyKey } from './scheduler-copy';
 
@@ -28,6 +29,12 @@
 		compactColumnCount: number;
 		addLaneId: string;
 		beginCreate: (event: PointerEvent, laneId: string) => void;
+		beginLaneReorder: (event: PointerEvent, laneId: string) => void;
+		setLaneReorderTarget: (laneId: string) => void;
+		finishLaneReorder: () => void;
+		moveLaneBy: (laneId: string, direction: -1 | 1) => void;
+		reorderingLaneId: string | null;
+		reorderTargetLaneId: string | null;
 		compactItemsForColumn: (column: number) => ScheduleItem[];
 		displayItem: (item: ScheduleItem) => boolean;
 		conflictIds: Set<string>;
@@ -37,6 +44,14 @@
 		itemBottomLine: (item: ScheduleItem) => string;
 		shouldShowItemBottomLine: (item: ScheduleItem) => boolean;
 		editMode: boolean;
+		onToggleEdit: () => void;
+		openFestivalSettings: () => void;
+		undoCount: number;
+		redoCount: number;
+		undo: () => void;
+		redo: () => void;
+		startAdd: () => void;
+		addLane: (type: LaneType) => void;
 		formatMinute: (minute: number) => string;
 		cycleItem: (itemId: string) => void;
 		openRelated: (item: ScheduleItem) => void;
@@ -74,6 +89,12 @@
 		compactColumnCount,
 		addLaneId,
 		beginCreate,
+		beginLaneReorder,
+		setLaneReorderTarget,
+		finishLaneReorder,
+		moveLaneBy,
+		reorderingLaneId,
+		reorderTargetLaneId,
 		compactItemsForColumn,
 		displayItem,
 		conflictIds,
@@ -83,6 +104,14 @@
 		itemBottomLine,
 		shouldShowItemBottomLine,
 		editMode,
+		onToggleEdit,
+		openFestivalSettings,
+		undoCount,
+		redoCount,
+		undo,
+		redo,
+		startAdd,
+		addLane,
 		formatMinute,
 		cycleItem,
 		openRelated,
@@ -123,9 +152,14 @@
 	}
 
 	function jumpToNow(): void {
-		if (!scroller || !isToday()) return;
+		if (!scroller) return;
 		scroller.scrollTo({
-			top: Math.max(0, minuteToY(nowMinute) - scroller.clientHeight / 2),
+			top: currentTimeScrollTop(
+				nowMinute,
+				gridRange.startMinute,
+				preferences.timeZoom,
+				scroller.clientHeight
+			),
 			behavior: 'smooth'
 		});
 	}
@@ -178,6 +212,14 @@
 								{formatMinute}
 								onEdit={() => onOpenLaneEditor(lane)}
 								onInfo={() => onOpenLaneInfo(lane)}
+								reordering={reorderingLaneId === lane.id}
+								reorderTarget={
+									reorderingLaneId !== lane.id && reorderTargetLaneId === lane.id
+								}
+								onReorderStart={(event) => beginLaneReorder(event, lane.id)}
+								onReorderTarget={() => setLaneReorderTarget(lane.id)}
+								onReorderEnd={finishLaneReorder}
+								onMoveBy={(direction) => moveLaneBy(lane.id, direction)}
 							/>
 						{/each}
 					{/if}
@@ -195,8 +237,14 @@
 						aria-label={t('timetable')}
 					style={`grid-template-columns:var(--lane-columns);min-height:${gridHeight}px;`}
 						onpointermove={handlePointerMove}
-						onpointerup={handlePointerUp}
-						onpointercancel={handlePointerUp}
+						onpointerup={() => {
+							handlePointerUp();
+							finishLaneReorder();
+						}}
+						onpointercancel={() => {
+							handlePointerUp();
+							finishLaneReorder();
+						}}
 					>
 						{#if compactActive}{#each Array.from( { length: compactColumnCount } ) as column (column)}<div
 									class="lane-column"
@@ -244,9 +292,9 @@
 									<div class="grid-lines"></div>
 									{#if lane.openingMinute !== undefined}<div
 											class="opening-marker"
-											style={`top:${minuteToY(lane.openingMinute)}px`}
+											style={`top:${minuteToY(lane.openingMinute)}px;--opening:var(--lane-color);--opening-surface:var(--lane-color)`}
 										>
-											<span>{formatMinute(lane.openingMinute)}</span>
+											<span>OPEN</span>
 										</div>{/if}{#if isToday() && nowMinute >= gridRange.startMinute && nowMinute <= gridRange.endMinute}<div
 											class="now-line"
 											style={`top:${minuteToY(nowMinute)}px`}
@@ -299,4 +347,47 @@
 					onclick={() => scrollTimetableHorizontally(1)}
 				>›</button>
 			{/if}
-			{#if isToday()}<button class="now-button" onclick={jumpToNow}>◉ {t('jumpNow')}</button>{/if}
+			<div class="timetable-floating-controls">
+				{#if editMode}
+					<section class="floating-edit-panel" aria-label={t('editTools')}>
+						<div class="floating-edit-row floating-settings-row">
+							<button class="floating-settings-button" onclick={openFestivalSettings}>⚙ フェス設定</button>
+							<button class="floating-exit-edit" onclick={onToggleEdit}>{t('exitEdit')}</button>
+						</div>
+						<div class="floating-edit-row floating-item-history-row">
+							<button class="floating-add-item" onclick={startAdd}>＋ {t('add')}</button>
+							<div class="floating-history-controls" aria-label="{t('undo')}・{t('redo')}">
+								<button
+									class="quiet-button history-button"
+									aria-label={t('undo')}
+									title={t('undo')}
+									disabled={!undoCount}
+									onclick={undo}
+								>↶</button
+								><button
+									class="quiet-button history-button"
+									aria-label={t('redo')}
+									title={t('redo')}
+									disabled={!redoCount}
+									onclick={redo}
+								>↷</button
+								>
+							</div>
+						</div>
+						<div class="floating-edit-row floating-lane-row">
+							<div class="floating-lane-actions" aria-label={t('addLane')}>
+								<button class="floating-add-lane lane-stage" onclick={() => addLane('stage')}
+									>＋ {t('stage')}</button
+								><button class="floating-add-lane lane-tokuten" onclick={() => addLane('tokuten')}
+									>＋ {t('tokuten')}</button
+								><button class="floating-add-lane lane-event" onclick={() => addLane('event')}
+									>＋ イベント</button
+								>
+							</div>
+						</div>
+					</section>
+				{:else}
+					<button class="floating-start-edit" aria-expanded="false" onclick={onToggleEdit}>✎ {t('startEdit')}</button>
+				{/if}
+				<button class="now-button" onclick={jumpToNow}>◉ {t('jumpNow')}</button>
+			</div>

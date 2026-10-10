@@ -29,6 +29,8 @@ export interface ScheduleItem {
 	artistLabel: string;
 	subContent?: string;
 	boothId?: string;
+	itemType?: LaneType;
+	color?: string;
 	artistEntityIds: string[];
 	favoriteLevel: 0 | 1 | 2 | 3;
 	pairedTokutenItemIds: string[];
@@ -56,7 +58,7 @@ export interface Festival {
 export interface UserPreferences {
 	language: 'ja' | 'en';
 	theme: 'light' | 'dark';
-	snapMinutes: 5 | 10 | 15;
+	snapMinutes: 5;
 	timeZoom: number;
 	laneWidth: number;
 	compactFavorites: boolean;

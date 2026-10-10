@@ -1,6 +1,12 @@
 import { readableTextColor } from '$lib/scheduler';
 import type { Lane, ScheduleItem, UserPreferences } from '$lib/types';
 
+export function itemDisplayColor(item: ScheduleItem, lane: Lane | undefined): string {
+	return item.itemType === 'tokuten' || (!item.itemType && lane?.type === 'tokuten')
+		? 'var(--tokuten-item)'
+		: (item.color ?? lane?.color ?? '#a8adb5');
+}
+
 type PresentationContext = {
 	items: ScheduleItem[];
 	preferences: UserPreferences;
@@ -31,11 +37,11 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 		const top = minuteToY(item.startMinute);
 		const height = displayedItemHeight(item);
 		const lane = laneForItem(item);
-		const color = lane?.type === 'tokuten' ? 'var(--tokuten-item)' : (lane?.color ?? '#a8adb5');
+		const color = itemDisplayColor(item, lane);
 		const itemText =
-			lane?.type === 'tokuten'
+			item.itemType === 'tokuten' || (!item.itemType && lane?.type === 'tokuten')
 				? 'var(--tokuten-item-text)'
-				: readableTextColor(lane?.color ?? '#a8adb5');
+				: readableTextColor(item.color ?? lane?.color ?? '#a8adb5');
 		const duration = item.endMinute - item.startMinute;
 		const mainSize =
 			itemHasLimitedContent(item) && duration >= 20

@@ -5,10 +5,11 @@ import {
 	packCompactItems,
 	snapMinutes,
 	cycleFavorite,
+	getSharedLaneOpeningMinute,
 	getRelatedItemIds,
 	readableTextColor
 } from './scheduler';
-import type { ArtistEntity, ScheduleItem } from './types';
+import type { ArtistEntity, Lane, ScheduleItem } from './types';
 
 const item = (
 	id: string,
@@ -45,6 +46,16 @@ describe('scheduler pure functions', () => {
 			startMinute: 1320,
 			endMinute: 1560
 		});
+	});
+
+	it('uses the earliest lane opening only when every lane has one', () => {
+		const lanes: Lane[] = [
+			{ id: 'main', name: 'メイン', type: 'stage', openingMinute: 660 },
+			{ id: 'sub', name: 'サブ', type: 'stage', openingMinute: 630 }
+		];
+		expect(getSharedLaneOpeningMinute(lanes)).toBe(630);
+		expect(getSharedLaneOpeningMinute([{ ...lanes[0] }, { ...lanes[1], openingMinute: undefined }])).toBeUndefined();
+		expect(getSharedLaneOpeningMinute([])).toBeUndefined();
 	});
 
 	it('packs filtered intervals into the leftmost non-overlapping columns', () => {

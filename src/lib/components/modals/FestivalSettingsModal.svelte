@@ -2,6 +2,7 @@
 	import type { FestivalSettingsDraft } from '$lib/ui-types';
 	import ModalHeader from '$lib/components/ModalHeader.svelte';
 	import ModalShell from '$lib/components/ModalShell.svelte';
+	import IntervalDelta from '$lib/components/IntervalDelta.svelte';
 
 	let {
 		draft = $bindable<FestivalSettingsDraft>(),
@@ -24,6 +25,8 @@
 			maxHour?: number
 		) => void;
 	} = $props();
+	function minuteFromText(value: string): number { return Number(value.slice(0, 2)) * 60 + Number(value.slice(3)); }
+	function formatMinute(value: number): string { return `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`; }
 </script>
 
 <ModalShell className="festival-settings-modal" labelledBy="festival-settings-title" {onClose}>
@@ -40,21 +43,21 @@
 		<label>日付<input type="date" bind:value={draft.date} /></label>
 		<label>
 			表示開始時刻
-			<input
+			<span class="time-input-row"><input
 				inputmode="numeric"
 				placeholder="09:00"
 				bind:value={draft.displayStart}
-				onblur={(event) => onNormalizeTime(event, (value) => (draft.displayStart = value), 24)}
-			/>
+				onblur={(event) => onNormalizeTime(event, (value) => (draft.displayStart = value))}
+			/><IntervalDelta value={minuteFromText(draft.displayStart)} onChange={(value) => (draft.displayStart = formatMinute(value))} /></span>
 		</label>
 		<label>
 			表示終了時刻
-			<input
+			<span class="time-input-row"><input
 				inputmode="numeric"
 				placeholder="30:00"
 				bind:value={draft.displayEnd}
 				onblur={(event) => onNormalizeTime(event, (value) => (draft.displayEnd = value))}
-			/>
+			/><IntervalDelta value={minuteFromText(draft.displayEnd)} onChange={(value) => (draft.displayEnd = formatMinute(value))} /></span>
 		</label>
 	</div>
 	<datalist id="timezone-options">

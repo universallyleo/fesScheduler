@@ -1,6 +1,6 @@
 import type { Festival, Lane, ScheduleItem } from '$lib/types';
 import type { BulkRow } from '$lib/ui-types';
-import { normalizeTimeText, parseMinute } from './timetable-layout';
+import { normalizeToFiveMinuteTime, parseMinute } from './timetable-layout';
 
 type BulkEntryOptions = {
 	getLanes: () => Lane[];
@@ -24,7 +24,7 @@ export function createBulkEntryController(options: BulkEntryOptions) {
 	}
 
 	function generatePreview(): void {
-		const normalizedStart = normalizeTimeText(startText);
+		const normalizedStart = normalizeToFiveMinuteTime(startText);
 		if (!normalizedStart) {
 			options.notify('開始時刻はHHMMまたはHH:MM形式（00:00〜30:00）で入力してください');
 			return;

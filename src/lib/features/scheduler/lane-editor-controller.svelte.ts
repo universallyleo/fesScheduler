@@ -1,5 +1,6 @@
 import type { Festival, Lane, LaneType } from '$lib/types';
-import { normalizeTimeText, parseMinute } from './timetable-layout';
+import { getSharedLaneOpeningMinute } from '$lib/scheduler';
+import { normalizeToFiveMinuteTime, parseMinute } from './timetable-layout';
 
 type LaneEditorOptions = {
 	getLanes: () => Lane[];
@@ -47,7 +48,7 @@ export function createLaneEditorController(options: LaneEditorOptions) {
 			draft.openingMinute = undefined;
 			return;
 		}
-		const normalized = normalizeTimeText(value);
+		const normalized = normalizeToFiveMinuteTime(value);
 		if (normalized) draft.openingMinute = parseMinute(normalized);
 	}
 
@@ -75,6 +76,7 @@ export function createLaneEditorController(options: LaneEditorOptions) {
 				const target = targetDay.lanes.find((lane) => lane.id === savedDraft.id);
 				if (target) Object.assign(target, savedDraft);
 			}
+			targetDay.openingMinute = getSharedLaneOpeningMinute(targetDay.lanes);
 		});
 		close();
 	}

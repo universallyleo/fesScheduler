@@ -8,7 +8,7 @@ import { deleteFestival, listFestivals, loadPreferences, saveFestival, savePrefe
 import type { Festival, FestivalDay, UserPreferences } from '$lib/types';
 import type { FestivalSettingsDraft } from '$lib/ui-types';
 import { createFestivalHistory } from './festival-history.svelte';
-import { formatMinute, normalizeTimeText, parseMinute } from './timetable-layout';
+import { formatMinute, normalizeToFiveMinuteTime, parseMinute } from './timetable-layout';
 
 type SessionOptions = {
 	defaults: UserPreferences;
@@ -138,8 +138,8 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 	}
 
 	function saveFestivalSettings(draft: FestivalSettingsDraft): boolean {
-		const startText = normalizeTimeText(draft.displayStart, 24);
-		const endText = normalizeTimeText(draft.displayEnd, 30);
+		const startText = normalizeToFiveMinuteTime(draft.displayStart, 30);
+		const endText = normalizeToFiveMinuteTime(draft.displayEnd, 30);
 		const startMinute = startText ? parseMinute(startText) : null;
 		const endMinute = endText ? parseMinute(endText) : null;
 		const title = draft.title.trim();
@@ -178,6 +178,7 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 		const storedPreferences = await loadPreferences();
 		if (storedPreferences) {
 			preferences = { ...defaults, ...storedPreferences };
+			preferences.snapMinutes = 5;
 			if (storedPreferences.timeZoom === 54 || storedPreferences.timeZoom === 180) {
 				preferences.timeZoom = defaults.timeZoom;
 			} else {

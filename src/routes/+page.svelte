@@ -4,6 +4,7 @@
 		computeGridRange,
 		cycleFavorite,
 		detectConflicts,
+		getSharedLaneOpeningMinute,
 		packCompactItems,
 		snapMinutes
 	} from '$lib/scheduler';
@@ -28,6 +29,7 @@
 	import { createLaneEditorController } from '$lib/features/scheduler/lane-editor-controller.svelte';
 	import { createGridInteractionController } from '$lib/features/scheduler/grid-interaction-controller.svelte';
 	import { createBulkEntryController } from '$lib/features/scheduler/bulk-entry-controller.svelte';
+	import { reorderLanes } from '$lib/features/scheduler/lane-order';
 	import { createTimetableSelectors } from '$lib/features/scheduler/timetable-selectors';
 	import { createTimetablePresentation } from '$lib/features/scheduler/timetable-presentation';
 	import { schedulerCopy, type SchedulerCopyKey } from '$lib/features/scheduler/scheduler-copy';
@@ -35,7 +37,7 @@
 		formatMinute,
 		minuteFromPointer as minuteFromPointerAt,
 		minuteToY as minuteToYAt,
-		normalizeTimeText
+		normalizeToFiveMinuteTime
 	} from '$lib/features/scheduler/timetable-layout';
 	import type { FavoriteFilter, FestivalSettingsDraft } from '$lib/ui-types';
 	import type {
@@ -46,8 +48,6 @@
 	} from '$lib/types';
 
 
-
-	const snapOptions: UserPreferences['snapMinutes'][] = [5, 10, 15];
 
 	const defaults: UserPreferences = {
 		language: 'ja',
@@ -89,22 +89,34 @@
 	const relatedLaneId = $derived(itemEditor.relatedLaneId);
 	const relatedDelay = $derived(itemEditor.relatedDelay);
 	const customRelatedDelay = $derived(itemEditor.customRelatedDelay);
+	const repeatEnabled = $derived(itemEditor.repeatEnabled);
+	const repeatCount = $derived(itemEditor.repeatCount);
+	const repeatRestMinutes = $derived(itemEditor.repeatRestMinutes);
+	const repeatItemsBeforeRest = $derived(itemEditor.repeatItemsBeforeRest);
+	const repeatNamesText = $derived(itemEditor.repeatNamesText);
+	const maximumRepeatCount = $derived(itemEditor.maximumRepeatCount);
+	const repeatPreview = $derived(itemEditor.repeatPreview);
+	const destinationLocked = $derived(itemEditor.destinationLocked);
+	const copyAcrossBooths = $derived(itemEditor.copyAcrossBooths);
+	const boothOffsets = $derived(itemEditor.boothOffsets);
+	const boothRepeatNames = $derived(itemEditor.boothRepeatNames);
+	const multiBoothPreview = $derived(itemEditor.multiBoothPreview);
 	const gridInteraction = createGridInteractionController({
 		getEditMode: () => editMode,
 		getCompactActive: () => compactActive,
 		getLanes: () => lanes,
 		getPreferences: () => preferences,
-		getSelectedDayId: () => selectedDayId,
 		minuteFromPointer,
 		updateFestival,
-		newId,
-		openItem: itemEditor.open,
+		openNew: itemEditor.openNew,
 		openRelated,
-		notify: flash
+		notify: flash,
+		reorderLanes: reorderSelectedDayLanes
 	});
-	const addMode = $derived(gridInteraction.addMode);
 	const addLaneId = $derived(gridInteraction.addLaneId);
 	const creating = $derived(gridInteraction.creating);
+	const reorderingLaneId = $derived(gridInteraction.reorderingLaneId);
+	const reorderTargetLaneId = $derived(gridInteraction.reorderTargetLaneId);
 	const bulkEntry = createBulkEntryController({
 		getLanes: () => lanes,
 		getSelectedDayId: () => selectedDayId,
@@ -152,9 +164,10 @@
 	);
 	const lanes = $derived(day?.lanes ?? []);
 	const items = $derived(day?.items ?? []);
-	const automaticGridRange = $derived(computeGridRange(items, day?.openingMinute));
+	const sharedLaneOpeningMinute = $derived(getSharedLaneOpeningMinute(lanes));
+	const automaticGridRange = $derived(computeGridRange(items, sharedLaneOpeningMinute));
 	const gridRange = $derived({
-		startMinute: day?.displayStartMinute ?? automaticGridRange.startMinute,
+		startMinute: sharedLaneOpeningMinute ?? day?.displayStartMinute ?? automaticGridRange.startMinute,
 		endMinute: day?.displayEndMinute ?? automaticGridRange.endMinute
 	});
 	const searchNormalized = $derived(searchQuery.normalize('NFKC').trim().toLocaleLowerCase());
@@ -262,7 +275,7 @@
 		maxHour = 30
 	): void {
 		const input = event.currentTarget as HTMLInputElement;
-		const normalized = normalizeTimeText(input.value, maxHour);
+		const normalized = normalizeToFiveMinuteTime(input.value, maxHour);
 		if (!normalized) {
 			flash(
 				`時刻はHHMMまたはHH:MM形式（00:00〜${formatMinute(maxHour * 60)}）で入力してください`
@@ -303,7 +316,7 @@
 			target,
 			gridRange.startMinute,
 			preferences.timeZoom,
-			preferences.snapMinutes,
+			5,
 			snapMinutes
 		);
 	}
@@ -321,6 +334,14 @@
 
 	function updateFestival(mutator: (next: Festival) => void): void {
 		session.updateFestival(mutator);
+	}
+	function reorderSelectedDayLanes(sourceId: string, targetId: string): void {
+		updateFestival((next) => {
+			const selectedDay = next.days.find((candidate) => candidate.id === selectedDayId);
+			if (!selectedDay) return;
+			const reordered = reorderLanes(selectedDay.lanes, sourceId, targetId);
+			if (reordered !== selectedDay.lanes) selectedDay.lanes = reordered;
+		});
 	}
 	function undo(): void {
 		session.undo();
@@ -349,7 +370,6 @@
 	}
 	function toggleEditMode(): void {
 		editMode = !editMode;
-		gridInteraction.clearAddMode();
 		if (!editMode) laneEditor.close();
 	}
 	function cycleItem(itemId: string): void {
@@ -476,8 +496,8 @@
 				onAddDay={session.addDay}
 			/>
 			<TimetableToolbar
-				bind:favoriteFilter bind:searchQuery bind:settingsOpen {editMode} {addMode} bind:importOpen
-				{preferences} {snapOptions} {t} savePreferences={session.persistPreferences} {setFavoriteFilter} {adjustTimeZoom} {downloadExport} {shareExport} onToggleEdit={toggleEditMode} {openFestivalSettings} {undoStack} {redoStack} {undo} {redo} startAdd={gridInteraction.startAdd} addLane={laneEditor.add}
+				bind:favoriteFilter bind:searchQuery bind:settingsOpen bind:importOpen
+				{preferences} {t} savePreferences={session.persistPreferences} {setFavoriteFilter} {adjustTimeZoom} {downloadExport} {shareExport}
 			/>
 			{#if conflicts.sameLane.length || conflicts.sameArtist.length}<section
 					class="warning-bar"
@@ -491,7 +511,7 @@
 					><span class="warning-hint">Items remain visible; edit mode can resolve them.</span>
 				</section>{/if}
 			<TimetableGrid
-				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {copyHandleStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} duplicateItem={itemEditor.duplicate} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
+				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {copyHandleStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} onToggleEdit={toggleEditMode} {openFestivalSettings} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} duplicateItem={itemEditor.duplicate} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
 				onOpenLaneEditor={laneEditor.open}
 				onOpenLaneInfo={(lane) => (infoLaneId = lane.id)}
 			/>
@@ -527,6 +547,18 @@
 		{relatedLaneId}
 		{relatedDelay}
 		{customRelatedDelay}
+		{repeatEnabled}
+		{repeatCount}
+		{repeatRestMinutes}
+		{repeatItemsBeforeRest}
+		{repeatNamesText}
+		{maximumRepeatCount}
+		{repeatPreview}
+		{destinationLocked}
+		{copyAcrossBooths}
+		{boothOffsets}
+		{boothRepeatNames}
+		{multiBoothPreview}
 		closeLabel={t('close')}
 		cancelLabel={t('cancel')}
 		applyLabel={t('apply')}
@@ -541,6 +573,16 @@
 		onRelatedLaneChange={itemEditor.setRelatedLaneId}
 		onRelatedDelayChange={itemEditor.setRelatedDelay}
 		onCustomRelatedDelayChange={itemEditor.setCustomRelatedDelay}
+		onRepeatEnabledChange={itemEditor.setRepeatEnabled}
+		onRepeatCountChange={itemEditor.setRepeatCount}
+		onRepeatRestMinutesChange={itemEditor.setRepeatRestMinutes}
+		onRepeatItemsBeforeRestChange={itemEditor.setRepeatItemsBeforeRest}
+		onRepeatNamesTextChange={itemEditor.setRepeatNamesText}
+		onDestinationLaneChange={itemEditor.setDestinationLaneId}
+		onCopyAcrossBoothsChange={itemEditor.setCopyAcrossBooths}
+		onBoothRepeatNamesChange={itemEditor.setBoothRepeatNames}
+		onBoothOffsetsChange={itemEditor.setBoothOffsets}
+		onRemoveBoothOffset={itemEditor.removeBoothOffset}
 		onTogglePair={itemEditor.togglePair}
 		onClose={itemEditor.close}
 		onDelete={() => {

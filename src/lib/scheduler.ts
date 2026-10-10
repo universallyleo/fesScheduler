@@ -1,4 +1,4 @@
-import type { ArtistEntity, CompactItemPlacement, ConflictReport, ScheduleItem } from './types';
+import type { ArtistEntity, CompactItemPlacement, ConflictReport, Lane, ScheduleItem } from './types';
 
 const DARK_FOREGROUND = '#13262b';
 const LIGHT_FOREGROUND = '#ffffff';
@@ -44,6 +44,11 @@ export function computeGridRange(
 	const startMinute = openingMinute ?? Math.max(0, earliest - 30);
 	const endMinute = latest > 1440 ? latest + 60 : Math.max(1440, latest + 30);
 	return { startMinute, endMinute };
+}
+
+export function getSharedLaneOpeningMinute(lanes: Lane[]): number | undefined {
+	if (lanes.length === 0 || lanes.some((lane) => lane.openingMinute === undefined)) return undefined;
+	return Math.min(...lanes.map((lane) => lane.openingMinute as number));
 }
 
 function overlaps(left: ScheduleItem, right: ScheduleItem): boolean {
