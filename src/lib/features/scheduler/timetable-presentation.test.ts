@@ -52,4 +52,19 @@ describe('multi-booth item stacking', () => {
 
 		expect(presentation.itemStyle(item)).toContain('--item-z:20;');
 	});
+
+	it('uses local time order for a settled overlap even outside a multi-booth lane', () => {
+		const later = { ...item, id: 'later', startMinute: 610, endMinute: 630 };
+		const presentation = createTimetablePresentation(() => ({
+			items: [item, later],
+			preferences: { language: 'ja', theme: 'light', snapMinutes: 5, timeZoom: 180, laneWidthMode: 'type', laneWidths: { stage: 140, tokuten: 140, event: 140 }, itemOverlapPolicy: 'allow', compactFavorites: false, blockColorMode: 'full' },
+			compactActive: false,
+			minuteToY: (minute) => minute,
+			laneForItem: () => lane,
+			itemBottomLine: () => ''
+		}));
+
+		expect(presentation.itemStyle(item)).toContain('--item-z:1;');
+		expect(presentation.itemStyle(later)).toContain('--item-z:2;');
+	});
 });

@@ -77,15 +77,13 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 		const boothLeft = booths.length > 1 ? (boothIndex * (1 - boothWidth)) / (booths.length - 1) : 0;
 		const itemStackLevel =
 			1 +
-			(booths.length > 1
-				? displayedItems.filter(
-						(candidate) =>
-							candidate.id !== displayed.id &&
-							candidate.laneId === displayed.laneId &&
-							candidate.startMinute < displayed.startMinute &&
-							overlaps(candidate, displayed)
-					).length
-				: 0);
+			displayedItems.filter(
+				(candidate) =>
+					candidate.id !== displayed.id &&
+					candidate.laneId === displayed.laneId &&
+					candidate.startMinute < displayed.startMinute &&
+					overlaps(candidate, displayed)
+			).length;
 		const boothLayout = booths.length
 			? `left:calc(4px + (100% - 8px) * ${boothLeft});right:auto;width:calc((100% - 8px) * ${boothWidth});`
 			: '';
