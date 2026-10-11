@@ -1,5 +1,6 @@
 import { readableTextColor } from '$lib/scheduler';
 import type { Lane, ScheduleItem, UserPreferences } from '$lib/types';
+import type { ItemDropResolution } from './item-drop-resolution';
 import { displayLaneWidth } from './lane-width';
 
 export function itemDisplayColor(item: ScheduleItem, lane: Lane | undefined): string {
@@ -19,12 +20,20 @@ type PresentationContext = {
 	minuteToY: (minute: number) => number;
 	laneForItem: (item: ScheduleItem) => Lane | undefined;
 	itemBottomLine: (item: ScheduleItem) => string;
+	dragPreview?: ItemDropResolution | null;
+	draggingItemId?: string | null;
 };
 
 export function createTimetablePresentation(context: () => PresentationContext) {
+	function previewedItem(item: ScheduleItem): ScheduleItem {
+		const patch = context().dragPreview?.patches.find((candidate) => candidate.id === item.id);
+		return patch ? { ...item, ...patch } : item;
+	}
+
 	function displayedItemHeight(item: ScheduleItem): number {
 		const { minuteToY } = context();
-		return Math.max(24, minuteToY(item.endMinute) - minuteToY(item.startMinute) - 4);
+		const displayed = previewedItem(item);
+		return Math.max(24, minuteToY(displayed.endMinute) - minuteToY(displayed.startMinute) - 4);
 	}
 
 	function itemHasLimitedContent(item: ScheduleItem): boolean {
@@ -38,8 +47,10 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 	}
 
 	function itemStyle(item: ScheduleItem): string {
-		const { minuteToY, laneForItem, compactActive, items } = context();
-		const top = minuteToY(item.startMinute);
+		const { minuteToY, laneForItem, compactActive, items, draggingItemId } = context();
+		const displayed = previewedItem(item);
+		const displayedItems = items.map(previewedItem);
+		const top = minuteToY(displayed.startMinute);
 		const height = displayedItemHeight(item);
 		const lane = laneForItem(item);
 		const color = itemDisplayColor(item, lane);
@@ -48,11 +59,11 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 				? 'var(--tokuten-item-text)'
 				: readableTextColor(item.color ?? lane?.color ?? '#a8adb5');
 		const booths = !compactActive && lane?.type === 'tokuten' ? lane.booths ?? [] : [];
-		const boothIndex = booths.length ? Math.max(0, booths.indexOf(item.boothId ?? booths[0] ?? '')) : 0;
+		const boothIndex = booths.length ? Math.max(0, booths.indexOf(displayed.boothId ?? booths[0] ?? '')) : 0;
 		const sameStartBooths = new Set(
 			booths.length
-				? items
-						.filter((candidate) => candidate.laneId === item.laneId && candidate.startMinute === item.startMinute)
+				? displayedItems
+						.filter((candidate) => candidate.laneId === displayed.laneId && candidate.startMinute === displayed.startMinute)
 						.map((candidate) => candidate.boothId)
 				: []
 		);
@@ -67,24 +78,19 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 		const itemStackLevel =
 			1 +
 			(booths.length > 1
-				? items.filter(
+				? displayedItems.filter(
 						(candidate) =>
-							candidate.id !== item.id &&
-							candidate.laneId === item.laneId &&
-							candidate.startMinute < item.startMinute &&
-							overlaps(candidate, item)
+							candidate.id !== displayed.id &&
+							candidate.laneId === displayed.laneId &&
+							candidate.startMinute < displayed.startMinute &&
+							overlaps(candidate, displayed)
 					).length
 				: 0);
 		const boothLayout = booths.length
 			? `left:calc(4px + (100% - 8px) * ${boothLeft});right:auto;width:calc((100% - 8px) * ${boothWidth});`
 			: '';
-		return `top:${top + 3}px;height:${height}px;--item-color:${color};--item-text:${itemText};--item-z:${itemStackLevel};${boothLayout}`;
-	}
-
-	function copyHandleStyle(item: ScheduleItem): string {
-		const { minuteToY } = context();
-		const top = minuteToY(item.startMinute);
-		return `top:${top + displayedItemHeight(item) - 16}px;`;
+		const stackLevel = draggingItemId === item.id ? 20 : itemStackLevel;
+		return `top:${top + 3}px;height:${height}px;--item-color:${color};--item-text:${itemText};--item-z:${stackLevel};${boothLayout}`;
 	}
 
 	function laneStyle(lane: Lane): string {
@@ -105,7 +111,6 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 		itemHasLimitedContent,
 		shouldShowItemBottomLine,
 		itemStyle,
-		copyHandleStyle,
 		laneStyle,
 		laneDisplayWidth
 	};

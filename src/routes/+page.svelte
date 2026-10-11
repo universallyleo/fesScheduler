@@ -294,13 +294,14 @@
 		compactActive,
 		minuteToY,
 		laneForItem,
-		itemBottomLine
+		itemBottomLine,
+		dragPreview: gridInteraction.itemDragPreview,
+		draggingItemId: gridInteraction.draggingItemId
 	}));
 	const {
 		itemHasLimitedContent,
 		shouldShowItemBottomLine,
 		itemStyle,
-		copyHandleStyle,
 		laneStyle,
 		laneDisplayWidth
 	} = timetablePresentation;
@@ -432,6 +433,14 @@
 				.flatMap((candidate) => candidate.items)
 				.find((item) => item.id === itemId);
 			if (target) target.favoriteLevel = cycleFavorite(target.favoriteLevel);
+		});
+	}
+	function changeItemBooth(itemId: string, boothId: string): void {
+		updateFestival((next) => {
+			const target = next.days
+				.flatMap((candidate) => candidate.items)
+				.find((item) => item.id === itemId);
+			if (target) target.boothId = boothId;
 		});
 	}
 	function openRelated(item: ScheduleItem): void {
@@ -590,7 +599,7 @@
 					</details>
 				</section>{/if}
 			<TimetableGrid
-				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} beginLaneResize={gridInteraction.beginLaneResize} updateLaneResize={gridInteraction.updateLaneResize} finishLaneResize={gridInteraction.finishLaneResize} laneResizePreview={gridInteraction.laneResizePreview} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {copyHandleStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} onToggleEdit={toggleEditMode} {openFestivalSettings} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} duplicateItem={itemEditor.duplicate} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
+				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} beginLaneResize={gridInteraction.beginLaneResize} updateLaneResize={gridInteraction.updateLaneResize} finishLaneResize={gridInteraction.finishLaneResize} laneResizePreview={gridInteraction.laneResizePreview} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} onToggleEdit={toggleEditMode} {openFestivalSettings} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
 				onOpenLaneEditor={laneEditor.open}
 				onOpenLaneInfo={(lane) => (infoLaneId = lane.id)}
 			/>
@@ -642,6 +651,7 @@
 		cancelLabel={t('cancel')}
 		applyLabel={t('apply')}
 		deleteLabel={t('delete')}
+		duplicateLabel={t('duplicate')}
 		relatedLabel={t('related')}
 		{laneTypeLabel}
 		{formatMinute}
@@ -667,6 +677,7 @@
 		onDelete={() => {
 			if (window.confirm('この項目を削除しますか？')) itemEditor.remove();
 		}}
+		onDuplicate={() => itemEditor.duplicate(editDraft)}
 		onSave={itemEditor.save}
 	/>
 {/if}

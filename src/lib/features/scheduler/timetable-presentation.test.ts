@@ -38,4 +38,18 @@ describe('multi-booth item stacking', () => {
 		expect(presentation.itemStyle(early)).toContain('--item-z:1;');
 		expect(presentation.itemStyle(later)).toContain('--item-z:2;');
 	});
+
+	it('raises only the active dragged item above its lane while leaving settled items at local levels', () => {
+		const presentation = createTimetablePresentation(() => ({
+			items: [item],
+			preferences: { language: 'ja', theme: 'light', snapMinutes: 5, timeZoom: 180, laneWidthMode: 'type', laneWidths: { stage: 140, tokuten: 140, event: 140 }, itemOverlapPolicy: 'allow', compactFavorites: false, blockColorMode: 'full' },
+			compactActive: false,
+			minuteToY: (minute) => minute,
+			laneForItem: () => lane,
+			itemBottomLine: () => '',
+			draggingItemId: 'item'
+		}));
+
+		expect(presentation.itemStyle(item)).toContain('--item-z:20;');
+	});
 });

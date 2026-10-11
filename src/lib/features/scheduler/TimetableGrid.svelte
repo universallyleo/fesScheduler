@@ -43,7 +43,6 @@
 		displayItem: (item: ScheduleItem) => boolean;
 		conflictIds: Set<string>;
 		itemStyle: (item: ScheduleItem) => string;
-		copyHandleStyle: (item: ScheduleItem) => string;
 		itemHasLimitedContent: (item: ScheduleItem) => boolean;
 		itemBottomLine: (item: ScheduleItem) => string;
 		shouldShowItemBottomLine: (item: ScheduleItem) => boolean;
@@ -61,7 +60,7 @@
 		openRelated: (item: ScheduleItem) => void;
 		beginItemPointer: (event: PointerEvent, item: ScheduleItem, kind: 'move' | 'resize') => void;
 		openEditor: (item: ScheduleItem, isNew?: boolean) => void;
-		duplicateItem: (item: ScheduleItem) => void;
+		changeItemBooth: (itemId: string, boothId: string) => void;
 		creating: CreateState;
 		compactPreview: { top: number; height: number; duration: number } | null;
 		itemForLane: (laneId: string) => ScheduleItem[];
@@ -107,7 +106,6 @@
 		displayItem,
 		conflictIds,
 		itemStyle,
-		copyHandleStyle,
 		itemHasLimitedContent,
 		itemBottomLine,
 		shouldShowItemBottomLine,
@@ -125,7 +123,7 @@
 		openRelated,
 		beginItemPointer,
 		openEditor,
-		duplicateItem,
+		changeItemBooth,
 		creating,
 		compactPreview,
 		itemForLane,
@@ -292,7 +290,6 @@
 										<ScheduleItemBlock
 											{item}
 											style={itemStyle(item)}
-											copyStyle={copyHandleStyle(item)}
 											visible={displayItem(item)}
 											conflict={conflictIds.has(item.id)}
 											partialColor={preferences.blockColorMode === 'partial'}
@@ -301,13 +298,12 @@
 											{formatMinute}
 											bottomLine={itemBottomLine(item)}
 											showBottomLine={shouldShowItemBottomLine(item)}
-											editLabel={t('edit')}
-											duplicateLabel={t('duplicate')}
+											booths={[]}
 											onCycleFavorite={() => cycleItem(item.id)}
 											onOpenRelated={() => openRelated(item)}
 											onPointer={(event, kind) => beginItemPointer(event, item, kind)}
 											onEdit={() => openEditor(item)}
-											onDuplicate={() => duplicateItem(item)}
+											onBoothChange={(boothId) => changeItemBooth(item.id, boothId)}
 										/>
 									{/each}
 									{#if creating?.laneId === addLaneId && compactPreview}<div
@@ -338,7 +334,6 @@
 											<ScheduleItemBlock
 												{item}
 												style={itemStyle(item)}
-												copyStyle={copyHandleStyle(item)}
 												visible={displayItem(item)}
 												conflict={conflictIds.has(item.id)}
 												partialColor={preferences.blockColorMode === 'partial'}
@@ -347,13 +342,12 @@
 												{formatMinute}
 												bottomLine={itemBottomLine(item)}
 												showBottomLine={shouldShowItemBottomLine(item)}
-												editLabel={t('edit')}
-												duplicateLabel={t('duplicate')}
+											booths={lane.booths ?? []}
 												onCycleFavorite={() => cycleItem(item.id)}
 												onOpenRelated={() => openRelated(item)}
 												onPointer={(event, kind) => beginItemPointer(event, item, kind)}
 												onEdit={() => openEditor(item)}
-												onDuplicate={() => duplicateItem(item)}
+											onBoothChange={(boothId) => changeItemBooth(item.id, boothId)}
 											/>
 										{/each}
 										{#if creating?.laneId === lane.id && compactPreview}<div
