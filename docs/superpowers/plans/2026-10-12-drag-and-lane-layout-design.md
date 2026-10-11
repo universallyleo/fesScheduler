@@ -6,9 +6,10 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
 
 ## Confirmed behaviour
 
-- Column width is adjustable from `表示設定`.
-  - By default, width is shared by all lanes of the same type: `ステージ`, `特典会`, and `イベント・インフォ`.
-  - `レーン幅を個別に設定` enables a per-lane resize handle. The saved override belongs to that lane; lanes without one inherit their type width.
+- Column width is adjusted by dragging the divider on the right edge of a column header, not by a value control in `表示設定`.
+  - `表示設定` holds only the scope choice: `種類ごとに変更` (default) or `レーンごとに変更`.
+  - In `種類ごとに変更`, dragging a divider updates every lane of that type: `ステージ`, `特典会`, or `イベント・インフォ`.
+  - In `レーンごとに変更`, dragging a divider saves an override only on that lane; lanes without an override inherit their type width.
   - A multi-booth lane continues to use its existing booth-placement formula. Changing the parent lane width scales every booth's usable horizontal width proportionally, including the 150%-wide presentation for three or more booths.
 - Lane reordering starts only from an explicit move grip (`⠿`) in the column header.
   - Desktop shows the current insertion rule and target state.
@@ -60,7 +61,7 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
 ### Rendering components
 
 - `src/lib/features/scheduler/TimetableToolbar.svelte`
-  - Own `表示設定` controls for type widths, individual-width mode, and the persistent overlap-policy radio group.
+  - Own `表示設定` controls for the lane-width scope and the persistent overlap-policy radio group.
   - Its settings panel receives the highest overlay layer among normal timetable controls.
 - `src/lib/components/LaneHeader.svelte`
   - Render the move grip, live mobile reorder affordance, and resize handle. It only forwards events.
@@ -89,7 +90,7 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
 ## Verification
 
 - Unit-test collision resolution for overlap, free-booth selection, upward/downward cascades, opening/00:00/30:00 clamps, and no-free-booth fallback.
-- Unit-test width inheritance and proportional multi-booth layout.
+- Unit-test divider resizing in both scope modes, width inheritance, and proportional multi-booth layout.
 - Unit-test the controller so it updates preview during movement and commits only once on release.
 - Run `bun run check`, the full unit suite, a production build, and the existing Playwright suite when the browser runtime is available.
 
