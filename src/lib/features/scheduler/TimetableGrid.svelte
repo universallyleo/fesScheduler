@@ -33,6 +33,10 @@
 		setLaneReorderTarget: (laneId: string) => void;
 		finishLaneReorder: () => void;
 		moveLaneBy: (laneId: string, direction: -1 | 1) => void;
+		beginLaneResize: (event: PointerEvent, laneId: string) => void;
+		updateLaneResize: (event: PointerEvent) => void;
+		finishLaneResize: () => void;
+		laneResizePreview: { laneId: string; width: number } | null;
 		reorderingLaneId: string | null;
 		reorderTargetLaneId: string | null;
 		compactItemsForColumn: (column: number) => ScheduleItem[];
@@ -93,6 +97,10 @@
 		setLaneReorderTarget,
 		finishLaneReorder,
 		moveLaneBy,
+		beginLaneResize,
+		updateLaneResize,
+		finishLaneResize,
+		laneResizePreview,
 		reorderingLaneId,
 		reorderTargetLaneId,
 		compactItemsForColumn,
@@ -130,6 +138,18 @@
 	let scroller = $state<HTMLDivElement>();
 	let horizontalScrollControls = $state({ visible: false, top: 0, left: 0, right: 0 });
 	let showCurrentTimeMarker = $state(false);
+	const renderedLaneColumnTemplate = $derived(
+		compactActive
+			? laneColumnTemplate
+			: visibleLanes
+					.map((lane) => {
+						const width = laneResizePreview?.laneId === lane.id
+							? laneResizePreview.width * (lane.type === 'tokuten' && (lane.booths?.length ?? 0) > 2 ? 1.5 : 1)
+							: laneDisplayWidth(lane);
+						return `${width}px`;
+					})
+					.join(' ')
+	);
 	const currentTimeMarkerVisible = $derived(
 		(showCurrentTimeMarker || isToday()) &&
 			nowMinute >= gridRange.startMinute &&
@@ -173,7 +193,7 @@
 
 	$effect(() => {
 		gridHeight;
-		laneColumnTemplate;
+		renderedLaneColumnTemplate;
 		const frame = window.requestAnimationFrame(updateHorizontalScrollControls);
 		return () => window.cancelAnimationFrame(frame);
 	});
@@ -205,7 +225,7 @@
 				<div
 					class:compact-grid={compactActive}
 					class="schedule-grid"
-					style={`--grid-columns:${visibleColumns};--lane-columns:${laneColumnTemplate};--grid-height:${gridHeight}px;--hour-height:${preferences.timeZoom}px;--hour-offset:${-((gridRange.startMinute % 60) / 60) * preferences.timeZoom}px;--half-hour-height:${preferences.timeZoom / 2}px;--half-hour-offset:${-((gridRange.startMinute % 30) / 60) * preferences.timeZoom}px;--grid-step-height:${(preferences.timeZoom * preferences.snapMinutes) / 60}px;--grid-step-offset:${-((gridRange.startMinute % preferences.snapMinutes) / 60) * preferences.timeZoom}px;--lane-width:${preferences.laneWidths.stage}px;--header-height:${compactActive ? 0 : 74}px;`}
+					style={`--grid-columns:${visibleColumns};--lane-columns:${renderedLaneColumnTemplate};--grid-height:${gridHeight}px;--hour-height:${preferences.timeZoom}px;--hour-offset:${-((gridRange.startMinute % 60) / 60) * preferences.timeZoom}px;--half-hour-height:${preferences.timeZoom / 2}px;--half-hour-offset:${-((gridRange.startMinute % 30) / 60) * preferences.timeZoom}px;--grid-step-height:${(preferences.timeZoom * preferences.snapMinutes) / 60}px;--grid-step-offset:${-((gridRange.startMinute % preferences.snapMinutes) / 60) * preferences.timeZoom}px;--lane-width:${preferences.laneWidths.stage}px;--header-height:${compactActive ? 0 : 74}px;`}
 				>
 					<div class="schedule-corner">TIME</div>
 					{#if !compactActive}
@@ -223,10 +243,18 @@
 								reorderTarget={
 									reorderingLaneId !== lane.id && reorderTargetLaneId === lane.id
 								}
+								reorderDestination={
+									reorderingLaneId !== lane.id && reorderTargetLaneId === lane.id
+										? `移動先: ${lane.name} の前`
+										: null
+								}
 								onReorderStart={(event) => beginLaneReorder(event, lane.id)}
 								onReorderTarget={() => setLaneReorderTarget(lane.id)}
 								onReorderEnd={finishLaneReorder}
 								onMoveBy={(direction) => moveLaneBy(lane.id, direction)}
+								onResizeStart={(event) => beginLaneResize(event, lane.id)}
+								onResizeMove={updateLaneResize}
+								onResizeEnd={finishLaneResize}
 							/>
 						{/each}
 					{/if}

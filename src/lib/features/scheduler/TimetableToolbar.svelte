@@ -105,6 +105,28 @@
 								}}>◐ <span>{t('colorMode')}</span><strong
 									>{preferences.blockColorMode === 'partial' ? '部分' : '全体'}</strong
 								></button
+							><fieldset class="settings-row settings-radio-fieldset">
+								<legend>{t('laneWidth')}</legend>
+								<div class="settings-radio-group settings-radio-group-two">
+									<label class="settings-radio" class:active={preferences.laneWidthMode === 'type'}
+										><input type="radio" name="lane-width-mode" value="type" bind:group={preferences.laneWidthMode} onchange={() => void savePreferences()} />{t('widthByType')}</label
+									><label class="settings-radio" class:active={preferences.laneWidthMode === 'individual'}
+										><input type="radio" name="lane-width-mode" value="individual" bind:group={preferences.laneWidthMode} onchange={() => void savePreferences()} />{t('widthIndividually')}</label
+									>
+								</div>
+							></fieldset
+							><fieldset class="settings-row settings-radio-fieldset">
+								<legend>{t('itemOverlap')}</legend>
+								<div class="settings-radio-group settings-radio-group-stack">
+									<label class="settings-radio" class:active={preferences.itemOverlapPolicy === 'allow'}
+										><input type="radio" name="item-overlap-policy" value="allow" bind:group={preferences.itemOverlapPolicy} onchange={() => void savePreferences()} />{t('overlapAllow')}</label
+									><label class="settings-radio" class:active={preferences.itemOverlapPolicy === 'free-booth'}
+										><input type="radio" name="item-overlap-policy" value="free-booth" bind:group={preferences.itemOverlapPolicy} onchange={() => void savePreferences()} />{t('overlapFreeBooth')}</label
+									><label class="settings-radio" class:active={preferences.itemOverlapPolicy === 'cascade'}
+										><input type="radio" name="item-overlap-policy" value="cascade" bind:group={preferences.itemOverlapPolicy} onchange={() => void savePreferences()} />{t('overlapCascade')}</label
+									>
+								</div>
+							></fieldset
 						></div>{/if}
 					</div>
 					<div class="transfer-actions">

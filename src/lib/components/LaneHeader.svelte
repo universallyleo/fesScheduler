@@ -12,9 +12,13 @@
 		onInfo,
 		reordering,
 		reorderTarget,
+		reorderDestination,
 		onReorderStart,
 		onReorderTarget,
 		onReorderEnd,
+		onResizeStart,
+		onResizeMove,
+		onResizeEnd,
 		onMoveBy
 	}: {
 		lane: Lane;
@@ -27,9 +31,13 @@
 		onInfo: () => void;
 		reordering: boolean;
 		reorderTarget: boolean;
+		reorderDestination: string | null;
 		onReorderStart: (event: PointerEvent) => void;
 		onReorderTarget: () => void;
 		onReorderEnd: () => void;
+		onResizeStart: (event: PointerEvent) => void;
+		onResizeMove: (event: PointerEvent) => void;
+		onResizeEnd: () => void;
 		onMoveBy: (direction: -1 | 1) => void;
 	} = $props();
 
@@ -49,11 +57,17 @@
 	role="toolbar"
 	aria-label={`${lane.name}のレーン操作`}
 	tabindex={editing ? 0 : undefined}
-	onpointerdown={onReorderStart}
 	onpointerenter={onReorderTarget}
 	onpointerup={onReorderEnd}
 	onkeydown={handleKeydown}
 >
+	{#if editing}
+		<button
+			class="lane-move-grip"
+			aria-label={`レーンを移動: ${lane.name}`}
+			title="レーンを移動"
+			onpointerdown={onReorderStart}>⠿</button>
+	{/if}
 	<strong>{lane.name}</strong>
 	{#if lane.booths?.length}<small>{lane.booths.join(' · ')}</small>{/if}
 	{#if editing}
@@ -61,4 +75,16 @@
 	{/if}
 	<button class="lane-info-button" aria-label={`${lane.name} ${infoLabel}`} onclick={onInfo}>ⓘ</button>
 	{#if lane.openingMinute !== undefined}<small>OPEN {formatMinute(lane.openingMinute)}</small>{/if}
+	{#if reorderTarget && reorderDestination}<span class="lane-reorder-destination">{reorderDestination}</span>{/if}
+	{#if editing}
+		<button
+			class="lane-resize-handle"
+			aria-label={`レーン幅を変更: ${lane.name}`}
+			title="レーン幅を変更"
+			onpointerdown={onResizeStart}
+			onpointermove={onResizeMove}
+			onpointerup={onResizeEnd}
+			onpointercancel={onResizeEnd}
+		></button>
+	{/if}
 </div>

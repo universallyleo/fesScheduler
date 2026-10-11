@@ -334,6 +334,7 @@ select {
 }
 .settings-menu {
 	position: relative;
+	z-index: 250;
 }
 .settings-button {
 	padding: 0 11px;
@@ -352,9 +353,9 @@ select {
 	position: absolute;
 	top: calc(100% + 8px);
 	right: 0;
-	z-index: 25;
+	z-index: 250;
 	display: grid;
-	width: 238px;
+	width: 280px;
 	gap: 13px;
 	padding: 14px;
 	border: 1px solid var(--line);
@@ -382,6 +383,12 @@ select {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 5px;
+}
+.settings-radio-group-two {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.settings-radio-group-stack {
+	grid-template-columns: 1fr;
 }
 .settings-radio {
 	display: flex;
@@ -728,15 +735,12 @@ select {
 	font-size: 12px;
 	line-height: 1.1;
 }
-.lane-header[tabindex] {
-	cursor: grab;
-}
 .lane-header.lane-reorder-source {
 	cursor: grabbing;
 	opacity: 0.58;
 }
 .lane-header.lane-reorder-target {
-	box-shadow: inset 4px 0 0 var(--teal);
+	box-shadow: inset 5px 0 0 var(--teal);
 }
 .lane-header::after {
 	position: absolute;
@@ -766,6 +770,48 @@ select {
 .lane-header .lane-edit-button {
 	margin-left: auto;
 	font-size: 13px;
+}
+.lane-header .lane-move-grip {
+	padding: 2px 3px;
+	font-size: 17px;
+	line-height: 1;
+	cursor: grab;
+	touch-action: none;
+}
+.lane-header .lane-move-grip:active {
+	cursor: grabbing;
+}
+.lane-header .lane-resize-handle {
+	position: absolute;
+	top: 0;
+	right: -7px;
+	bottom: 0;
+	z-index: 5;
+	width: 14px;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	cursor: col-resize;
+	touch-action: none;
+}
+.lane-header .lane-resize-handle:hover,
+.lane-header .lane-resize-handle:focus-visible {
+	background: color-mix(in srgb, var(--teal) 35%, transparent);
+	filter: none;
+}
+.lane-reorder-destination {
+	position: absolute;
+	bottom: 4px;
+	left: 8px;
+	max-width: calc(100% - 16px);
+	overflow: hidden;
+	color: var(--teal-deep);
+	font-size: 10px;
+	font-weight: 800;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	pointer-events: none;
 }
 .lane-header button:hover {
 	color: var(--lane-icon, var(--teal));
@@ -2129,6 +2175,10 @@ select {
 		bottom: 74px;
 		left: 10px;
 		width: auto;
+	}
+	.lane-header .lane-resize-handle {
+		right: -18px;
+		width: 44px;
 	}
 	.transfer-actions {
 		margin-left: auto;
