@@ -1,4 +1,5 @@
 export type LaneType = 'stage' | 'tokuten' | 'event';
+export type ItemOverlapPolicy = 'allow' | 'free-booth' | 'cascade';
 export type ArtistEntityKind = 'group' | 'member';
 
 export interface ArtistEntity {
