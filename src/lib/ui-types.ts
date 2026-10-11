@@ -1,4 +1,5 @@
 import type { ScheduleItem } from '$lib/types';
+import type { ItemDropResolution } from '$lib/features/scheduler/item-drop-resolution';
 
 export type FavoriteFilter = 0 | 1 | 2 | 3;
 
@@ -8,6 +9,16 @@ export type DragState = {
 	originY: number;
 	startMinute: number;
 	endMinute: number;
+	pointerId: number;
+	direction: 'up' | 'down';
+	resolution: ItemDropResolution | null;
+} | null;
+
+export type LaneResizeState = {
+	laneId: string;
+	originX: number;
+	startWidth: number;
+	width: number;
 } | null;
 
 export type CreateState = {

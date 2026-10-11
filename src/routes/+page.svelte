@@ -107,9 +107,14 @@
 		getEditMode: () => editMode,
 		getCompactActive: () => compactActive,
 		getLanes: () => lanes,
+		getItems: () => items,
 		getPreferences: () => preferences,
 		minuteFromPointer,
 		updateFestival,
+		updatePreferences: (mutator) => {
+			mutator(preferences);
+			session.persistPreferences();
+		},
 		openNew: itemEditor.openNew,
 		openRelated,
 		notify: flash,
