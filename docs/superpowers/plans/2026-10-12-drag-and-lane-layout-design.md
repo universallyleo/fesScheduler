@@ -6,10 +6,11 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
 
 ## Confirmed behaviour
 
-- Column width is adjusted by dragging the divider on the right edge of a column header, not by a value control in `表示設定`.
+- Column width is adjusted only in edit mode by dragging the divider on the right edge of a column header, not by a value control in `表示設定`.
   - `表示設定` holds only the scope choice: `種類ごとに変更` (default) or `レーンごとに変更`.
   - In `種類ごとに変更`, dragging a divider updates every lane of that type: `ステージ`, `特典会`, or `イベント・インフォ`.
   - In `レーンごとに変更`, dragging a divider saves an override only on that lane; lanes without an override inherit their type width.
+  - On fine-pointer devices, the divider shows the standard horizontal column-resize cursor on hover. On touch devices, its visible hit area provides the affordance instead.
   - A multi-booth lane continues to use its existing booth-placement formula. Changing the parent lane width scales every booth's usable horizontal width proportionally, including the 150%-wide presentation for three or more booths.
 - Lane reordering starts only from an explicit move grip (`⠿`) in the column header.
   - Desktop shows the current insertion rule and target state.
