@@ -548,8 +548,9 @@ select {
 	color: var(--danger);
 }
 .warning-bar {
-	display: flex;
-	align-items: center;
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: start;
 	gap: 9px;
 	margin: 5px 0 11px;
 	padding: 9px 12px;
@@ -571,6 +572,38 @@ select {
 	margin-left: auto;
 	color: var(--warning-muted);
 	font-size: 11px;
+}
+.warning-bar details {
+	min-width: 0;
+}
+.warning-bar summary {
+	cursor: pointer;
+	font-weight: 750;
+}
+.conflict-list {
+	display: grid;
+	gap: 5px;
+	margin: 7px 0 0;
+	padding: 0;
+	list-style: none;
+}
+.conflict-list li {
+	display: grid;
+	gap: 2px;
+	padding: 6px 8px;
+	border: 1px solid color-mix(in srgb, var(--warning-accent) 36%, transparent);
+	background: color-mix(in srgb, var(--warning) 82%, var(--panel));
+}
+.conflict-list b {
+	font-size: 11px;
+}
+.conflict-list span,
+.conflict-list small {
+	font-size: 11px;
+	line-height: 1.35;
+}
+.conflict-list small {
+	color: var(--warning-muted);
 }
 .favorite-control {
 	gap: 5px;
@@ -629,7 +662,7 @@ select {
 }
 .timetable-scroll-control {
 	position: fixed;
-	z-index: 4500;
+	z-index: 290;
 	width: 34px;
 	height: 56px;
 	padding: 0;
@@ -668,7 +701,7 @@ select {
 .lane-header {
 	position: sticky;
 	top: 0;
-	z-index: 5;
+	z-index: 200;
 	height: var(--header-height);
 	border-right: 1px solid var(--line-grid);
 	border-bottom: 1px solid var(--line-grid);
@@ -676,7 +709,7 @@ select {
 }
 .schedule-corner {
 	left: 0;
-	z-index: 8;
+	z-index: 210;
 	display: grid;
 	place-items: end center;
 	padding-bottom: 10px;
@@ -753,7 +786,7 @@ select {
 .time-axis {
 	position: sticky;
 	left: 0;
-	z-index: 4000;
+	z-index: 210;
 	grid-column: 1;
 	grid-row: 2;
 	background: var(--surface-axis);
@@ -772,7 +805,7 @@ select {
 .now-axis-label {
 	position: absolute;
 	right: 5px;
-	z-index: 4001;
+	z-index: 211;
 	transform: translateY(-50%);
 	padding: 2px 3px;
 	border-radius: 2px;
@@ -821,7 +854,7 @@ select {
 	position: absolute;
 	right: 0;
 	left: 0;
-	z-index: 2;
+	z-index: 10;
 	border-top: 3px solid var(--opening);
 	pointer-events: none;
 }
@@ -840,7 +873,7 @@ select {
 	position: absolute;
 	right: -1px;
 	left: -1px;
-	z-index: 3;
+	z-index: 11;
 	border-top: 2px solid var(--now);
 	pointer-events: none;
 }
@@ -858,7 +891,7 @@ select {
 	position: absolute;
 	right: 4px;
 	left: 4px;
-	z-index: var(--item-z, 4);
+	z-index: var(--item-z, 1);
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
@@ -878,7 +911,6 @@ select {
 }
 .schedule-block:hover,
 .schedule-block:focus-visible {
-	z-index: calc(var(--item-z, 4) + 1000);
 	filter: saturate(1.1) brightness(1.03);
 	box-shadow: 0 4px 11px var(--shadow-block-hover);
 }
@@ -976,7 +1008,7 @@ select {
 .item-edit-button,
 .copy-item-button {
 	position: absolute;
-	z-index: 3500;
+	z-index: 2;
 	width: 22px;
 	height: 17px;
 	padding: 0;
@@ -1021,7 +1053,7 @@ select {
 	position: sticky;
 	right: 18px;
 	bottom: 18px;
-	z-index: 12;
+	z-index: 300;
 	display: grid;
 	width: max-content;
 	justify-items: end;
@@ -1806,7 +1838,7 @@ select {
 }
 .schedule-block.compact-content strong {
 	margin-top: 1px;
-	font-size: var(--item-main-size, clamp(12px, 1.2vw, 17px));
+	font-size: clamp(12px, 1.2vw, 17px);
 	line-height: 1.14;
 	-webkit-line-clamp: 1;
 	line-clamp: 1;
@@ -2117,7 +2149,7 @@ select {
 		padding: 0 2px;
 	}
 	.timetable-scroller {
-		max-height: min(calc(100vh - 300px), 540px);
+		max-height: min(calc(100dvh - 230px), 540px);
 	}
 	.schedule-grid {
 		grid-template-columns: 54px var(--lane-columns);

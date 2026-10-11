@@ -179,10 +179,14 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 		if (storedPreferences) {
 			preferences = { ...defaults, ...storedPreferences };
 			preferences.snapMinutes = 5;
-			if (storedPreferences.timeZoom === 54 || storedPreferences.timeZoom === 180) {
+			if (
+				storedPreferences.timeZoom === 54 ||
+				storedPreferences.timeZoom === 180 ||
+				storedPreferences.timeZoom === 300
+			) {
 				preferences.timeZoom = defaults.timeZoom;
 			} else {
-				preferences.timeZoom = Math.max(144, Math.min(360, storedPreferences.timeZoom));
+				preferences.timeZoom = Math.max(120, Math.min(360, storedPreferences.timeZoom));
 			}
 		}
 		const stored = await listFestivals();

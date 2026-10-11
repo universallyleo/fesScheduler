@@ -53,7 +53,7 @@
 		language: 'ja',
 		theme: 'light',
 		snapMinutes: 5,
-		timeZoom: 300,
+		timeZoom: 216,
 		laneWidth: 152,
 		compactFavorites: false,
 		blockColorMode: 'full'
@@ -150,6 +150,8 @@
 	let festivalSettingsDraft = $state<FestivalSettingsDraft | null>(null);
 	let toast = $state('');
 	let nowMinute = $state(0);
+	let savedPageScrollY = $state<number | null>(null);
+	let restoredPageScroll = $state(false);
 	const undoStack = $derived(session.undoStack);
 	const redoStack = $derived(session.redoStack);
 
@@ -158,6 +160,14 @@
 		return () => {
 			delete document.documentElement.dataset.theme;
 		};
+	});
+	$effect(() => {
+		if (isLoading || restoredPageScroll || savedPageScrollY === null) return;
+		restoredPageScroll = true;
+		const firstFrame = window.requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => window.scrollTo({ top: savedPageScrollY as number }));
+		});
+		return () => window.cancelAnimationFrame(firstFrame);
 	});
 	const day = $derived(
 		festival.days.find((candidate) => candidate.id === selectedDayId) ?? festival.days[0]
@@ -204,6 +214,33 @@
 	const conflictIds = $derived(
 		new Set([...conflicts.sameLane.flat(), ...conflicts.sameArtist.flat()])
 	);
+	const conflictDetails = $derived.by(() => {
+		const itemsById = new Map(items.map((item) => [item.id, item]));
+		const details = new Map<
+			string,
+			{ left: ScheduleItem; right: ScheduleItem; sameLane: boolean; sameArtist: boolean; linked: boolean }
+		>();
+		const add = (pair: [string, string], kind: 'sameLane' | 'sameArtist') => {
+			const left = itemsById.get(pair[0]);
+			const right = itemsById.get(pair[1]);
+			if (!left || !right) return;
+			const key = [left.id, right.id].sort().join(':');
+			const detail = details.get(key) ?? {
+				left,
+				right,
+				sameLane: false,
+				sameArtist: false,
+				linked:
+					left.pairedTokutenItemIds.includes(right.id) ||
+					right.pairedTokutenItemIds.includes(left.id)
+			};
+			detail[kind] = true;
+			details.set(key, detail);
+		};
+		for (const pair of conflicts.sameLane) add(pair, 'sameLane');
+		for (const pair of conflicts.sameArtist) add(pair, 'sameArtist');
+		return [...details.values()];
+	});
 	const timeTicks = $derived.by(() => {
 		const first = Math.ceil(gridRange.startMinute / 30) * 30;
 		return Array.from(
@@ -326,7 +363,7 @@
 	function adjustTimeZoom(deltaY: number): void {
 		const direction = Math.sign(deltaY);
 		if (!direction) return;
-		const next = Math.max(144, Math.min(360, preferences.timeZoom - direction * 12));
+		const next = Math.max(120, Math.min(360, preferences.timeZoom - direction * 12));
 		if (next === preferences.timeZoom) return;
 		preferences.timeZoom = next;
 		session.persistPreferences();
@@ -354,6 +391,11 @@
 		window.setTimeout(() => {
 			if (toast === message) toast = '';
 		}, 2600);
+	}
+	function conflictItemDescription(item: ScheduleItem): string {
+		const lane = lanes.find((candidate) => candidate.id === item.laneId);
+		const place = [lane?.name, item.boothId].filter(Boolean).join('・');
+		return `${formatMinute(item.startMinute)}–${formatMinute(item.endMinute)} 「${item.artistLabel}」${place ? `（${place}）` : ''}`;
 	}
 	function selectDay(id: string): void {
 		session.selectDay(id);
@@ -434,8 +476,27 @@
 
 	onMount(() => {
 		let timer: number | undefined;
+		let scrollFrame: number | undefined;
+		const scrollKey = 'live-fes:page-scroll-y';
+		const storedScrollY = window.sessionStorage.getItem(scrollKey);
+		if (storedScrollY && Number.isFinite(Number(storedScrollY))) {
+			savedPageScrollY = Number(storedScrollY);
+		}
+		const savePageScroll = () => {
+			if (scrollFrame) return;
+			scrollFrame = window.requestAnimationFrame(() => {
+				window.sessionStorage.setItem(scrollKey, String(window.scrollY));
+				scrollFrame = undefined;
+			});
+		};
+		window.history.scrollRestoration = 'manual';
+		window.addEventListener('scroll', savePageScroll, { passive: true });
+		window.addEventListener('pagehide', savePageScroll);
 		void (async () => {
 			await session.load();
+			if (window.matchMedia('(max-width: 780px)').matches && preferences.timeZoom === defaults.timeZoom) {
+				preferences.timeZoom = 144;
+			}
 			const updateNow = () => {
 				const parts = new Intl.DateTimeFormat('en-GB', {
 					timeZone: festival.timezone,
@@ -452,6 +513,10 @@
 		})();
 		return () => {
 			if (timer) window.clearInterval(timer);
+			if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
+			window.sessionStorage.setItem(scrollKey, String(window.scrollY));
+			window.removeEventListener('scroll', savePageScroll);
+			window.removeEventListener('pagehide', savePageScroll);
 		};
 	});
 </script>
@@ -499,16 +564,23 @@
 				bind:favoriteFilter bind:searchQuery bind:settingsOpen bind:importOpen
 				{preferences} {t} savePreferences={session.persistPreferences} {setFavoriteFilter} {adjustTimeZoom} {downloadExport} {shareExport}
 			/>
-			{#if conflicts.sameLane.length || conflicts.sameArtist.length}<section
+			{#if conflictDetails.length}<section
 					class="warning-bar"
 					aria-live="polite"
 				>
-					<strong>!</strong><span
-						>{conflicts.sameLane.length} lane overlap{conflicts.sameLane.length === 1 ? '' : 's'} · {conflicts
-							.sameArtist.length} artist conflict{conflicts.sameArtist.length === 1
-							? ''
-							: 's'}</span
-					><span class="warning-hint">Items remain visible; edit mode can resolve them.</span>
+					<strong>!</strong><details open>
+						<summary>{conflictDetails.length}件の重複があります。内容を確認してください。</summary>
+						<ul class="conflict-list">
+							{#each conflictDetails as conflict (`${conflict.left.id}:${conflict.right.id}`)}
+								<li>
+									{#if conflict.sameLane}<b>レーン内の時間重複</b>{/if}
+									{#if conflict.sameArtist}<b>出演時間の重複</b>{/if}
+									<span>{conflictItemDescription(conflict.left)} と {conflictItemDescription(conflict.right)} が重なっています。</span>
+									{#if conflict.linked}<small>関連するイベントとしてリンク済みです。</small>{/if}
+								</li>
+							{/each}
+						</ul>
+					</details>
 				</section>{/if}
 			<TimetableGrid
 				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {copyHandleStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} onToggleEdit={toggleEditMode} {openFestivalSettings} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} duplicateItem={itemEditor.duplicate} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}

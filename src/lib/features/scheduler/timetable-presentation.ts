@@ -7,6 +7,10 @@ export function itemDisplayColor(item: ScheduleItem, lane: Lane | undefined): st
 		: (item.color ?? lane?.color ?? '#a8adb5');
 }
 
+function overlaps(left: ScheduleItem, right: ScheduleItem): boolean {
+	return left.startMinute < right.endMinute && right.startMinute < left.endMinute;
+}
+
 type PresentationContext = {
 	items: ScheduleItem[];
 	preferences: UserPreferences;
@@ -42,11 +46,6 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 			item.itemType === 'tokuten' || (!item.itemType && lane?.type === 'tokuten')
 				? 'var(--tokuten-item-text)'
 				: readableTextColor(item.color ?? lane?.color ?? '#a8adb5');
-		const duration = item.endMinute - item.startMinute;
-		const mainSize =
-			itemHasLimitedContent(item) && duration >= 20
-				? Math.max(7, Math.min(17, Math.floor(height - 13)))
-				: null;
 		const booths = !compactActive && lane?.type === 'tokuten' ? lane.booths ?? [] : [];
 		const boothIndex = booths.length ? Math.max(0, booths.indexOf(item.boothId ?? booths[0] ?? '')) : 0;
 		const sameStartBooths = new Set(
@@ -64,10 +63,21 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 					? 1 / booths.length
 					: Math.min(0.62, 1 / booths.length + 0.24);
 		const boothLeft = booths.length > 1 ? (boothIndex * (1 - boothWidth)) / (booths.length - 1) : 0;
+		const itemStackLevel =
+			1 +
+			(booths.length > 1
+				? items.filter(
+						(candidate) =>
+							candidate.id !== item.id &&
+							candidate.laneId === item.laneId &&
+							candidate.startMinute < item.startMinute &&
+							overlaps(candidate, item)
+					).length
+				: 0);
 		const boothLayout = booths.length
-			? `left:calc(4px + (100% - 8px) * ${boothLeft});right:auto;width:calc((100% - 8px) * ${boothWidth});--item-z:${item.startMinute};`
+			? `left:calc(4px + (100% - 8px) * ${boothLeft});right:auto;width:calc((100% - 8px) * ${boothWidth});`
 			: '';
-		return `top:${top + 3}px;height:${height}px;--item-color:${color};--item-text:${itemText};${mainSize ? `--item-main-size:${mainSize}px;` : ''}${boothLayout}`;
+		return `top:${top + 3}px;height:${height}px;--item-color:${color};--item-text:${itemText};--item-z:${itemStackLevel};${boothLayout}`;
 	}
 
 	function copyHandleStyle(item: ScheduleItem): string {

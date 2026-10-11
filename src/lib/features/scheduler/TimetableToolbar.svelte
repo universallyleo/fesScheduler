@@ -82,7 +82,7 @@
 								><span>{t('zoom')}</span><div class="settings-range"
 									><span aria-hidden="true">↕</span><input
 										type="range"
-										min="144"
+										min="120"
 										max="360"
 										step="12"
 											aria-label={t('zoom')}

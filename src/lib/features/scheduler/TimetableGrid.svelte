@@ -129,6 +129,12 @@
 
 	let scroller = $state<HTMLDivElement>();
 	let horizontalScrollControls = $state({ visible: false, top: 0, left: 0, right: 0 });
+	let showCurrentTimeMarker = $state(false);
+	const currentTimeMarkerVisible = $derived(
+		(showCurrentTimeMarker || isToday()) &&
+			nowMinute >= gridRange.startMinute &&
+			nowMinute <= gridRange.endMinute
+	);
 
 	function updateHorizontalScrollControls(): void {
 		if (!scroller || typeof window === 'undefined') return;
@@ -153,6 +159,7 @@
 
 	function jumpToNow(): void {
 		if (!scroller) return;
+		showCurrentTimeMarker = true;
 		scroller.scrollTo({
 			top: currentTimeScrollTop(
 				nowMinute,
@@ -226,7 +233,7 @@
 					<div class="time-axis" style={`height:${gridHeight}px`}>
 						{#each timeTicks as tick (tick)}<span style={`top:${minuteToY(tick)}px`}
 								>{formatMinute(tick)}</span
-							>{/each}{#if isToday() && nowMinute >= gridRange.startMinute && nowMinute <= gridRange.endMinute}<i
+								>{/each}{#if currentTimeMarkerVisible}<i
 								class="now-axis-label"
 								style={`top:${minuteToY(nowMinute)}px`}>NOW</i
 							>{/if}
@@ -295,7 +302,7 @@
 											style={`top:${minuteToY(lane.openingMinute)}px;--opening:var(--lane-color);--opening-surface:var(--lane-color)`}
 										>
 											<span>OPEN</span>
-										</div>{/if}{#if isToday() && nowMinute >= gridRange.startMinute && nowMinute <= gridRange.endMinute}<div
+									</div>{/if}{#if currentTimeMarkerVisible}<div
 											class="now-line"
 											style={`top:${minuteToY(nowMinute)}px`}
 										></div>{/if}

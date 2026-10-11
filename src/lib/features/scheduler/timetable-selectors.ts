@@ -1,4 +1,4 @@
-import { getRelatedItemIds } from '$lib/scheduler';
+import { getRelatedItemIds, normalizeArtistLabel } from '$lib/scheduler';
 import type { Festival, Lane, ScheduleItem } from '$lib/types';
 
 type SelectorContext = {
@@ -42,11 +42,19 @@ export function createTimetableSelectors(context: () => SelectorContext) {
 	function shouldExpandRelatedBranch(candidates: ScheduleItem[]): boolean {
 		const draft = context().editDraft;
 		if (!draft) return false;
-		return candidates.some((item) =>
-			item.artistLabel.trim() === draft.artistLabel.trim() ||
-			draft.pairedTokutenItemIds.includes(item.id) ||
-			item.pairedTokutenItemIds.includes(draft.id)
-		);
+		const draftArtist = normalizeArtistLabel(draft.artistLabel).replace(/\s+/g, '');
+		return candidates.some((item) => {
+			const candidateArtist = normalizeArtistLabel(item.artistLabel).replace(/\s+/g, '');
+			const hasPartialArtistMatch =
+				Boolean(draftArtist) &&
+				Boolean(candidateArtist) &&
+				(draftArtist.includes(candidateArtist) || candidateArtist.includes(draftArtist));
+			return (
+				hasPartialArtistMatch ||
+				draft.pairedTokutenItemIds.includes(item.id) ||
+				item.pairedTokutenItemIds.includes(draft.id)
+			);
+		});
 	}
 
 	function allRelatedItemIds(selectedItemId: string): string[] {
