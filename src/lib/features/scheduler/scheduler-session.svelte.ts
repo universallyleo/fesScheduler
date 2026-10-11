@@ -178,6 +178,17 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 		const storedPreferences = await loadPreferences();
 		if (storedPreferences) {
 			preferences = { ...defaults, ...storedPreferences };
+			const legacyPreferences = storedPreferences as UserPreferences & { laneWidth?: number };
+			const legacyWidth = legacyPreferences.laneWidth;
+			if (!storedPreferences.laneWidths) {
+				preferences.laneWidths = {
+					stage: legacyWidth ?? defaults.laneWidths.stage,
+					tokuten: legacyWidth ?? defaults.laneWidths.tokuten,
+					event: legacyWidth ?? defaults.laneWidths.event
+				};
+			}
+			preferences.laneWidthMode ??= 'type';
+			preferences.itemOverlapPolicy ??= 'allow';
 			preferences.snapMinutes = 5;
 			if (
 				storedPreferences.timeZoom === 54 ||

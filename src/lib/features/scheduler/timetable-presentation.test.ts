@@ -28,7 +28,7 @@ describe('multi-booth item stacking', () => {
 		const later = { ...item, id: 'later', laneId: 'tokuten', boothId: 'B', startMinute: 630, endMinute: 660 };
 		const presentation = createTimetablePresentation(() => ({
 			items: [early, later],
-			preferences: { language: 'ja', theme: 'light', snapMinutes: 5, timeZoom: 180, laneWidth: 140, compactFavorites: false, blockColorMode: 'full' },
+			preferences: { language: 'ja', theme: 'light', snapMinutes: 5, timeZoom: 180, laneWidthMode: 'type', laneWidths: { stage: 140, tokuten: 140, event: 140 }, itemOverlapPolicy: 'allow', compactFavorites: false, blockColorMode: 'full' },
 			compactActive: false,
 			minuteToY: (minute) => minute,
 			laneForItem: () => boothLane,

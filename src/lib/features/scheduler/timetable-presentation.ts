@@ -1,5 +1,6 @@
 import { readableTextColor } from '$lib/scheduler';
 import type { Lane, ScheduleItem, UserPreferences } from '$lib/types';
+import { displayLaneWidth } from './lane-width';
 
 export function itemDisplayColor(item: ScheduleItem, lane: Lane | undefined): string {
 	return item.itemType === 'tokuten' || (!item.itemType && lane?.type === 'tokuten')
@@ -96,9 +97,7 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 
 	function laneDisplayWidth(lane: Lane): number {
 		const { preferences } = context();
-		return lane.type === 'tokuten' && (lane.booths?.length ?? 0) > 2
-			? preferences.laneWidth * 1.5
-			: preferences.laneWidth;
+		return displayLaneWidth(lane, preferences.laneWidthMode, preferences.laneWidths);
 	}
 
 	return {

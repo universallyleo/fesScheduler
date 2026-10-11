@@ -29,7 +29,9 @@ function createFixture({ editing = true, compact = false } = {}) {
 			theme: 'light',
 			snapMinutes: 5,
 			timeZoom: 180,
-			laneWidth: 140,
+			laneWidthMode: 'type',
+			laneWidths: { stage: 140, tokuten: 140, event: 140 },
+			itemOverlapPolicy: 'allow',
 			compactFavorites: false,
 			blockColorMode: 'full'
 		}),

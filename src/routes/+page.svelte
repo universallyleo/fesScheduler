@@ -54,7 +54,9 @@
 		theme: 'light',
 		snapMinutes: 5,
 		timeZoom: 216,
-		laneWidth: 152,
+		laneWidthMode: 'type',
+		laneWidths: { stage: 152, tokuten: 152, event: 152 },
+		itemOverlapPolicy: 'allow',
 		compactFavorites: false,
 		blockColorMode: 'full'
 	};

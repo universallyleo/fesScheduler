@@ -1,5 +1,7 @@
 export type LaneType = 'stage' | 'tokuten' | 'event';
 export type ItemOverlapPolicy = 'allow' | 'free-booth' | 'cascade';
+export type LaneWidthMode = 'type' | 'individual';
+export type LaneTypeWidths = Record<LaneType, number>;
 export type ArtistEntityKind = 'group' | 'member';
 
 export interface ArtistEntity {
@@ -20,6 +22,7 @@ export interface Lane {
 	color?: string;
 	backgroundColor?: string;
 	booths?: string[];
+	width?: number;
 }
 
 export interface ScheduleItem {
@@ -61,7 +64,9 @@ export interface UserPreferences {
 	theme: 'light' | 'dark';
 	snapMinutes: 5;
 	timeZoom: number;
-	laneWidth: number;
+	laneWidthMode: LaneWidthMode;
+	laneWidths: LaneTypeWidths;
+	itemOverlapPolicy: ItemOverlapPolicy;
 	compactFavorites: boolean;
 	blockColorMode: 'full' | 'partial';
 	lastFestivalId?: string;
