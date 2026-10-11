@@ -70,17 +70,17 @@ src/
 - Consumes: `ScheduleItem`, `Lane`, proposed start/end minute, drag direction, and lane bounds.
 - Used by: `grid-interaction-controller.svelte.ts` in Task 3.
 
-- [ ] **Step 1: Write failing resolver tests**
+- [x] **Step 1: Write failing resolver tests**
 
   Cover: allow-with-warning; free booth selection; no-free-booth fallback; a 10-minute downward cascade; a 10-minute upward cascade; 30:00 and opening-time clamps.
 
-- [ ] **Step 2: Run the resolver test file and verify it fails**
+- [x] **Step 2: Run the resolver test file and verify it fails**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/item-drop-resolution.test.ts`
 
   Expected: FAIL because `resolveItemDrop` does not exist.
 
-- [ ] **Step 3: Add the policy type and implement `resolveItemDrop`**
+- [x] **Step 3: Add the policy type and implement `resolveItemDrop`**
 
   Add `ItemOverlapPolicy` to `src/lib/types.ts`. Implement:
 
@@ -98,11 +98,11 @@ src/
 
   Return immutable item patches and a conflict flag. For cascade, shift the complete earlier/later run in the same booth by the final overlap amount, clamp the run as a group, and preserve five-minute boundaries.
 
-- [ ] **Step 4: Run the resolver test file and verify it passes**
+- [x] **Step 4: Run the resolver test file and verify it passes**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/item-drop-resolution.test.ts`
 
-- [ ] **Step 5: Commit the resolver**
+- [x] **Step 5: Commit the resolver**
 
   ```sh
   git add src/lib/types.ts src/lib/features/scheduler/item-drop-resolution.ts src/lib/features/scheduler/item-drop-resolution.test.ts
@@ -124,15 +124,15 @@ src/
 - Consumes: existing persisted `laneWidth` values during session migration.
 - Used by: toolbar, grid controller, and timetable presentation in later tasks.
 
-- [ ] **Step 1: Write failing width tests**
+- [x] **Step 1: Write failing width tests**
 
   Assert type-level inheritance, a per-lane override, and a three-booth 特典会 display width that is exactly 1.5 times its resolved base width.
 
-- [ ] **Step 2: Run width tests and verify they fail**
+- [x] **Step 2: Run width tests and verify they fail**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/lane-width.test.ts`
 
-- [ ] **Step 3: Implement persisted width types and migration**
+- [x] **Step 3: Implement persisted width types and migration**
 
   Add optional `width?: number` to `Lane`. Replace `UserPreferences.laneWidth` with:
 
@@ -144,15 +144,15 @@ src/
 
   In `scheduler-session.svelte.ts`, migrate an existing scalar `laneWidth` into all three type widths and default new settings to `type` / `allow`.
 
-- [ ] **Step 4: Implement lane-width helpers and use them in presentation**
+- [x] **Step 4: Implement lane-width helpers and use them in presentation**
 
   `resolvedLaneBaseWidth` returns `lane.width` only in individual mode, otherwise the type width. `displayLaneWidth` applies the multi-booth 1.5 multiplier after the base-width calculation.
 
-- [ ] **Step 5: Run width and presentation tests**
+- [x] **Step 5: Run width and presentation tests**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/lane-width.test.ts src/lib/features/scheduler/timetable-presentation.test.ts`
 
-- [ ] **Step 6: Commit lane width handling**
+- [x] **Step 6: Commit lane width handling**
 
   ```sh
   git add src/lib/types.ts src/lib/features/scheduler/lane-width.ts src/lib/features/scheduler/lane-width.test.ts src/lib/features/scheduler/scheduler-session.svelte.ts src/lib/features/scheduler/timetable-presentation.ts src/lib/features/scheduler/timetable-presentation.test.ts
@@ -171,27 +171,27 @@ src/
 - Produces: `itemDragPreview`, `laneResizePreview`, and mobile reorder destination state for `TimetableGrid`.
 - Guarantees: it performs no festival mutation during pointer move and one mutation at pointer release.
 
-- [ ] **Step 1: Write failing controller tests**
+- [x] **Step 1: Write failing controller tests**
 
   Assert an item move updates `itemDragPreview` without calling `updateFestival`; `handlePointerUp` commits the resolver patches once; non-edit mode rejects lane resize/reorder; and a divider drag changes type widths or one lane override according to `laneWidthMode`.
 
-- [ ] **Step 2: Run controller tests and verify they fail**
+- [x] **Step 2: Run controller tests and verify they fail**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/grid-interaction-controller.test.ts`
 
-- [ ] **Step 3: Add explicit preview state and commit-on-release behavior**
+- [x] **Step 3: Add explicit preview state and commit-on-release behavior**
 
   Extend `DragState` in `ui-types.ts` with pointer id, direction, original item placement, and resolved preview. `handlePointerMove` only updates this state. `handlePointerUp` applies returned patches through one `updateFestival` call.
 
-- [ ] **Step 4: Split header interaction into grip reorder and divider resize**
+- [x] **Step 4: Split header interaction into grip reorder and divider resize**
 
   Add `beginLaneReorder`, `beginLaneResize`, `updateLaneResize`, and their finish methods. Reordering must require the grip; on coarse pointers, do not mark it active until the hold threshold completes. Resize behavior must return immediately outside edit mode.
 
-- [ ] **Step 5: Run controller tests and verify they pass**
+- [x] **Step 5: Run controller tests and verify they pass**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/grid-interaction-controller.test.ts`
 
-- [ ] **Step 6: Commit grid interaction behavior**
+- [x] **Step 6: Commit grid interaction behavior**
 
   ```sh
   git add src/lib/ui-types.ts src/lib/features/scheduler/grid-interaction-controller.svelte.ts src/lib/features/scheduler/grid-interaction-controller.test.ts
@@ -212,23 +212,23 @@ src/
 - Consumes: `laneWidthMode`, `itemOverlapPolicy`, controller resize/reorder state, and resolved lane widths.
 - Produces: accessible settings radio groups, a grip-only reorder affordance, divider drag handle, and visible mobile destination feedback.
 
-- [ ] **Step 1: Add display-setting copy and radio controls**
+- [x] **Step 1: Add display-setting copy and radio controls**
 
   Add Japanese labels for `レーン幅`, `種類ごとに変更`, `レーンごとに変更`, `項目の重なり`, and the three overlap policies. Bind native radio inputs to preferences and persist on change.
 
-- [ ] **Step 2: Add header grip, resize divider, and preview props**
+- [x] **Step 2: Add header grip, resize divider, and preview props**
 
   Render `⠿` as the only reorder activator. Add an edge handle with a 44px coarse-pointer hit target. Pass state through `TimetableGrid` and the route without putting scheduling logic in components.
 
-- [ ] **Step 3: Style visible state and overlay hierarchy**
+- [x] **Step 3: Style visible state and overlay hierarchy**
 
   Add the desktop `col-resize` cursor only when editing. On mobile, show a held-header ghost, target insertion rule, and `移動先` text. Raise the `表示設定` panel above headers/cards; retain the established floating edit/current-time controls above it where required by the existing layering contract.
 
-- [ ] **Step 4: Verify type checking and focused tests**
+- [x] **Step 4: Verify type checking and focused tests**
 
   Run: `bun run check && bun run test:unit -- --run src/lib/features/scheduler/grid-interaction-controller.test.ts src/lib/features/scheduler/lane-width.test.ts`
 
-- [ ] **Step 5: Commit settings and lane affordances**
+- [x] **Step 5: Commit settings and lane affordances**
 
   ```sh
   git add src/lib/features/scheduler/scheduler-copy.ts src/lib/features/scheduler/TimetableToolbar.svelte src/lib/components/LaneHeader.svelte src/lib/features/scheduler/TimetableGrid.svelte src/routes/+page.svelte src/app.css
@@ -249,31 +249,31 @@ src/
 - Consumes: active drag preview, booth choices, and editor duplicate callback.
 - Produces: a raised active card, post-drop local stack order, card click editing, compact footer booth selection, and modal duplication action.
 
-- [ ] **Step 1: Write failing presentation/component-facing tests**
+- [x] **Step 1: Write failing presentation/component-facing tests**
 
   Extend `timetable-presentation.test.ts` to assert the active dragged item receives the temporary top stack level and that settled non-overlapping cards share one stack level.
 
-- [ ] **Step 2: Run presentation tests and verify they fail**
+- [x] **Step 2: Run presentation tests and verify they fail**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/timetable-presentation.test.ts`
 
-- [ ] **Step 3: Render the new item-card hierarchy**
+- [x] **Step 3: Render the new item-card hierarchy**
 
   Render start time on the top line and end time in the footer. Remove the pencil and inline duplicate buttons. In edit mode, use a compact native booth select beside the footer end time only for lanes with multiple booths; its change invokes one route mutation.
 
-- [ ] **Step 4: Move duplication to the modal action row**
+- [x] **Step 4: Move duplication to the modal action row**
 
   Add a duplicate action to `ItemEditorModal` and pass the existing controller command through the route. The card’s normal edit click remains the way to open this modal.
 
-- [ ] **Step 5: Render and style drag previews**
+- [x] **Step 5: Render and style drag previews**
 
   Apply preview placement without mutating source items; give the active dragged card the temporary top item layer. After release, use the existing low local overlap order. Do not use transparency as a substitute for readable multi-booth footer controls.
 
-- [ ] **Step 6: Run focused tests and type checking**
+- [x] **Step 6: Run focused tests and type checking**
 
   Run: `bun run test:unit -- --run src/lib/features/scheduler/timetable-presentation.test.ts && bun run check`
 
-- [ ] **Step 7: Commit card controls and previews**
+- [x] **Step 7: Commit card controls and previews**
 
   ```sh
   git add src/lib/components/ScheduleItemBlock.svelte src/lib/components/modals/ItemEditorModal.svelte src/lib/features/scheduler/TimetableGrid.svelte src/lib/features/scheduler/timetable-presentation.ts src/routes/+page.svelte src/app.css src/lib/features/scheduler/timetable-presentation.test.ts
@@ -285,7 +285,7 @@ src/
 **Files:**
 - Modify only as required by verification failures.
 
-- [ ] **Step 1: Run the complete verification set**
+- [x] **Step 1: Run the complete verification set**
 
   Run:
 
@@ -296,9 +296,11 @@ src/
   bun run test:e2e
   ```
 
-- [ ] **Step 2: Report the exact result**
+- [x] **Step 2: Report the exact result**
 
   Record any unavailable Playwright browser runtime separately from application failures. Do not claim browser coverage if Playwright cannot launch.
+
+	**Recorded 2026-10-12:** `bun run check`, 52 unit tests, and `bun run build` passed. `bun run test:e2e` could not launch because Playwright's Chromium headless-shell executable is absent from the local Playwright cache; this is an environment prerequisite, not an application-test failure.
 
 ## Self-review
 
@@ -306,4 +308,3 @@ src/
 - Type consistency: Task 1 defines `ItemOverlapPolicy` used by Task 2 preferences and Task 3 resolver/controller flow. Task 2 defines lane-width types used by Tasks 3–5.
 - Review-focus coverage: every listed risk is covered by the indicated Task 1–3 tests.
 - Proportion: the plan specifies public types, UI boundaries, and test cases without transcribing implementation bodies.
-
