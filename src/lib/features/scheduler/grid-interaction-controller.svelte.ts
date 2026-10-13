@@ -22,6 +22,7 @@ type GridInteractionOptions = {
 	openRelated: (item: ScheduleItem) => void;
 	notify: (message: string) => void;
 	reorderLanes: (sourceId: string, targetId: string) => void;
+	getLaneEndMinute?: (lane: Lane) => number;
 };
 
 const DAY_END_MINUTE = 30 * 60;
@@ -33,6 +34,10 @@ export function createGridInteractionController(options: GridInteractionOptions)
 	let creating = $state<CreateState>(null);
 	let laneReorder = $state<{ sourceLaneId: string; targetLaneId: string } | null>(null);
 	let laneResize = $state<LaneResizeState>(null);
+	let selectedItemIds = $state<string[]>([]);
+	let selectedLaneId = $state<string | null>(null);
+	let multiSelectEnabled = $state(false);
+	let suppressedCardClickId = $state<string | null>(null);
 	let longPressTimer: number | undefined;
 	let laneHoldTimer: number | undefined;
 
@@ -52,6 +57,8 @@ export function createGridInteractionController(options: GridInteractionOptions)
 		event.preventDefault();
 		event.stopPropagation();
 		(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+		const selected = multiSelectEnabled && selectedItemIds.includes(item.id) ? selectedItemIds : [item.id];
+		const lane = options.getLanes().find((candidate) => candidate.id === item.laneId);
 		dragging = {
 			kind,
 			itemId: item.id,
@@ -60,6 +67,8 @@ export function createGridInteractionController(options: GridInteractionOptions)
 			endMinute: item.endMinute,
 			pointerId: event.pointerId,
 			direction: 'down',
+			selectedItemIds: selected,
+			limitMinute: lane ? (options.getLaneEndMinute?.(lane) ?? lane.endMinute ?? DAY_END_MINUTE) : DAY_END_MINUTE,
 			resolution: null
 		};
 	}
@@ -104,7 +113,9 @@ export function createGridInteractionController(options: GridInteractionOptions)
 				proposedStartMinute,
 				proposedEndMinute,
 				direction,
-				policy: options.getPreferences().itemOverlapPolicy
+				policy: options.getPreferences().itemOverlapPolicy,
+				selectedItemIds: dragging.kind === 'move' ? dragging.selectedItemIds : undefined,
+				endMinute: dragging.limitMinute
 			})
 		};
 	}
@@ -126,8 +137,12 @@ export function createGridInteractionController(options: GridInteractionOptions)
 	function handlePointerUp(): void {
 		clearTimers();
 		if (dragging) {
+			const activeDrag = dragging;
+			const movedItemId = activeDrag.itemId;
+			const didDrag = Boolean(activeDrag.resolution && activeDrag.resolution.patches.some((patch) => patch.id === movedItemId && (patch.startMinute !== activeDrag.startMinute || patch.endMinute !== activeDrag.endMinute)));
 			commitItemDrag();
 			dragging = null;
+			if (didDrag) suppressedCardClickId = movedItemId;
 			return;
 		}
 		const creation = creating;
@@ -209,6 +224,34 @@ export function createGridInteractionController(options: GridInteractionOptions)
 		});
 	}
 
+	function setMultiSelectEnabled(value: boolean): void {
+		multiSelectEnabled = value;
+		if (!value) clearSelection();
+	}
+
+	function clearSelection(): void {
+		selectedItemIds = [];
+		selectedLaneId = null;
+	}
+
+	function toggleItemSelection(item: ScheduleItem): void {
+		if (!multiSelectEnabled || !options.getEditMode()) return;
+		if (selectedLaneId && selectedLaneId !== item.laneId) return;
+		if (selectedItemIds.includes(item.id)) {
+			selectedItemIds = selectedItemIds.filter((id) => id !== item.id);
+			if (!selectedItemIds.length) selectedLaneId = null;
+			return;
+		}
+		selectedLaneId = item.laneId;
+		selectedItemIds = [...selectedItemIds, item.id];
+	}
+
+	function consumeSuppressedCardClick(itemId: string): boolean {
+		if (suppressedCardClickId !== itemId) return false;
+		suppressedCardClickId = null;
+		return true;
+	}
+
 	return {
 		get addLaneId() {
 			return options.getLanes()[0]?.id ?? '';
@@ -222,6 +265,19 @@ export function createGridInteractionController(options: GridInteractionOptions)
 		get draggingItemId() {
 			return dragging?.itemId ?? null;
 		},
+		get selectedItemIds() {
+			return selectedItemIds;
+		},
+		get selectedLaneId() {
+			return selectedLaneId;
+		},
+		get multiSelectEnabled() {
+			return multiSelectEnabled;
+		},
+		setMultiSelectEnabled,
+		toggleItemSelection,
+		clearSelection,
+		consumeSuppressedCardClick,
 		get laneResizePreview() {
 			return laneResize;
 		},

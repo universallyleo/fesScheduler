@@ -124,7 +124,11 @@
 		openNew: itemEditor.openNew,
 		openRelated,
 		notify: flash,
-		reorderLanes: reorderSelectedDayLanes
+		reorderLanes: reorderSelectedDayLanes,
+		getLaneEndMinute: (lane) => {
+			const day = festival.days.find((candidate) => candidate.id === selectedDayId) ?? festival.days[0];
+			return day ? effectiveLaneEndMinute(lane, day) : 30 * 60;
+		}
 	});
 	const addLaneId = $derived(gridInteraction.addLaneId);
 	const creating = $derived(gridInteraction.creating);

@@ -147,4 +147,37 @@ describe('grid item creation', () => {
 		expect(preferences.laneWidths.stage).toBe(140);
 		expect(getFestival().days[0]?.lanes[0]?.width).toBe(170);
 	});
+
+	it('locks multi-selection to the first selected lane and toggles selected items', () => {
+		const first = scheduledItem('first');
+		const otherLane = { ...scheduledItem('other'), laneId: 'lane-b' };
+		const { controller } = createFixture({ items: [first, otherLane] });
+
+		controller.setMultiSelectEnabled(true);
+		controller.toggleItemSelection(first);
+		controller.toggleItemSelection(otherLane);
+		expect(controller.selectedItemIds).toEqual(['first']);
+		controller.toggleItemSelection(first);
+		expect(controller.selectedItemIds).toEqual([]);
+	});
+
+	it('moves all selected items by one baseline delta and suppresses the follow-up click', () => {
+		const first = scheduledItem('first', 600, 620);
+		const second = scheduledItem('second', 630, 650);
+		const { controller, getFestival, getUpdateFestivalCount } = createFixture({ items: [first, second] });
+
+		controller.setMultiSelectEnabled(true);
+		controller.toggleItemSelection(first);
+		controller.toggleItemSelection(second);
+		controller.beginItemPointer(createPointerEvent(), first, 'move');
+		controller.handlePointerMove(createPointerEvent({ clientY: 30 }));
+		controller.handlePointerUp();
+
+		expect(getUpdateFestivalCount()).toBe(1);
+		expect(getFestival().days[0]?.items.map((item) => [item.id, item.startMinute, item.endMinute])).toEqual([
+			['first', 610, 630], ['second', 640, 660]
+		]);
+		expect(controller.consumeSuppressedCardClick('first')).toBe(true);
+		expect(controller.consumeSuppressedCardClick('first')).toBe(false);
+	});
 });

@@ -206,31 +206,31 @@ src/
 - Produces: controller state/actions `selectedItemIds`, `selectedLaneId`, `toggleItemSelection(itemId)`, `clearSelection()`, `beginItemDrag(...)`, `updateItemDrag(...)`, `finishItemDrag(...)`, and `consumeSuppressedCardClick(itemId)`.
 - Consumed by Tasks 5 and 7.
 
-- [ ] **Step 1: Write failing controller tests**
+- [x] **Step 1: Write failing controller tests**
 
   Assert that selection accepts cards only from the first selected lane, toggles a selected card off, and is cleared when edit mode ends. Assert that moving a selected group commits exactly one baseline-derived patch set on pointer release, preserves offsets/booths, uses the effective lane end, and suppresses the following card activation after a real drag.
 
-- [ ] **Step 2: Run controller tests to verify the new cases fail**
+- [x] **Step 2: Run controller tests to verify the new cases fail**
 
   Run: `bun run test -- src/lib/features/scheduler/grid-interaction-controller.test.ts`
 
   Expected: FAIL because there is no selected-ID state or baseline drag session.
 
-- [ ] **Step 3: Capture an immutable `DragSession` at pointer down**
+- [x] **Step 3: Capture an immutable `DragSession` at pointer down**
 
   Snapshot all relevant lane items, selected IDs, original positions/booths, pointer origin, direction, and resolved end bound. During pointer movement, call Task 3 with that snapshot and replace only transient preview state; do not update festival data.
 
-- [ ] **Step 4: Commit once and consume post-drag clicks**
+- [x] **Step 4: Commit once and consume post-drag clicks**
 
   On pointer release, apply the final patch set once, then mark that card activation as suppressed. Clear the session, but retain selection until the user toggles a card, changes mode, or explicitly clears it.
 
-- [ ] **Step 5: Run focused verification**
+- [x] **Step 5: Run focused verification**
 
   Run: `bun run test -- src/lib/features/scheduler/grid-interaction-controller.test.ts`
 
   Expected: PASS.
 
-- [ ] **Step 6: Commit interaction state**
+- [x] **Step 6: Commit interaction state**
 
   ```bash
   git add src/lib/features/scheduler/grid-interaction-controller.svelte.ts src/lib/features/scheduler/grid-interaction-controller.test.ts

@@ -8,9 +8,11 @@ export type DragState = {
 	itemId: string;
 	originY: number;
 	startMinute: number;
-	endMinute: number;
+	limitMinute: number;
 	pointerId: number;
 	direction: 'up' | 'down';
+	selectedItemIds: string[];
+	endMinute: number;
 	resolution: ItemDropResolution | null;
 } | null;
 
