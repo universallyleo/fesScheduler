@@ -28,6 +28,7 @@
 	import { createItemEditorController } from '$lib/features/scheduler/item-editor-controller.svelte';
 	import { createLaneEditorController } from '$lib/features/scheduler/lane-editor-controller.svelte';
 	import { createGridInteractionController } from '$lib/features/scheduler/grid-interaction-controller.svelte';
+	import { effectiveLaneEndMinute } from '$lib/features/scheduler/lane-time-bounds';
 	import { createBulkEntryController } from '$lib/features/scheduler/bulk-entry-controller.svelte';
 	import { reorderLanes } from '$lib/features/scheduler/lane-order';
 	import { createTimetableSelectors } from '$lib/features/scheduler/timetable-selectors';
@@ -83,7 +84,12 @@
 		updateFestival,
 		newId,
 		notify: flash,
-		laneTypeLabel
+		laneTypeLabel,
+		getLaneEndMinute: (laneId) => {
+			const day = festival.days.find((candidate) => candidate.id === selectedDayId) ?? festival.days[0];
+			const lane = day?.lanes.find((candidate) => candidate.id === laneId);
+			return lane && day ? effectiveLaneEndMinute(lane, day) : 30 * 60;
+		}
 	});
 	const editingItemId = $derived(itemEditor.itemId);
 	const editDraft = $derived(itemEditor.draft);

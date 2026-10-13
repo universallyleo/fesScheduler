@@ -120,31 +120,31 @@ src/
 - Produces: `maximumRepeatCount(input: RepeatPlanInput, endMinute: number): number` and `reconcileRepeatCount(repeatCount: number, namesText: string, maximumCount: number): number`.
 - Consumed by Task 7 when the route opens/saves the item editor.
 
-- [ ] **Step 1: Write failing repeat tests**
+- [x] **Step 1: Write failing repeat tests**
 
   Add assertions that a repeat plan stops at a lane end before the festival end, falls back to the festival end when the lane has none, and falls back to 30:00 otherwise. Add an assertion that removing slash-separated names while typing does not lower `repeatCount`, while saving raises it to normalized-name count and clamps it to the supplied maximum.
 
-- [ ] **Step 2: Run focused repeat tests to verify the new cases fail**
+- [x] **Step 2: Run focused repeat tests to verify the new cases fail**
 
   Run: `bun run test -- src/lib/features/scheduler/repeat-items.test.ts src/lib/features/scheduler/item-editor-controller.test.ts`
 
   Expected: FAIL on the new bound and save-time reconciliation assertions.
 
-- [ ] **Step 3: Implement explicit repetition limits and reconciliation**
+- [x] **Step 3: Implement explicit repetition limits and reconciliation**
 
   Pass an end-minute argument through repetition planning instead of relying on a `30:00` constant. Normalize `/` and `／` names only at save time, trim each non-empty name, raise the count to their number, then clamp it to `maximumRepeatCount`.
 
-- [ ] **Step 4: Keep text-entry state non-mutating**
+- [x] **Step 4: Keep text-entry state non-mutating**
 
   Change the item-editor controller so `setRepeatNamesText` stores text only. Invoke `reconcileRepeatCount` from the save path, after the lane and day have resolved their effective end.
 
-- [ ] **Step 5: Run focused verification**
+- [x] **Step 5: Run focused verification**
 
   Run: `bun run test -- src/lib/features/scheduler/repeat-items.test.ts src/lib/features/scheduler/item-editor-controller.test.ts`
 
   Expected: PASS.
 
-- [ ] **Step 6: Commit bounded repetition**
+- [x] **Step 6: Commit bounded repetition**
 
   ```bash
   git add src/lib/features/scheduler/repeat-items.ts src/lib/features/scheduler/repeat-items.test.ts src/lib/features/scheduler/item-editor-controller.svelte.ts src/lib/features/scheduler/item-editor-controller.test.ts

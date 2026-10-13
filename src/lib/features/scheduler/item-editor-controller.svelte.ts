@@ -1,5 +1,5 @@
 import type { Festival, Lane, LaneType, ScheduleItem } from '$lib/types';
-import { buildRepeatPreview, buildRepeatedItemSpecs, countRepeatNames, maximumRepeatCount } from './repeat-items';
+import { buildRepeatPreview, buildRepeatedItemSpecs, maximumRepeatCount, reconcileRepeatCount } from './repeat-items';
 import {
 	buildMultiBoothRepeat,
 	maximumMultiBoothRepeatCount,
@@ -15,6 +15,7 @@ type ItemEditorOptions = {
 	newId: () => string;
 	notify: (message: string) => void;
 	laneTypeLabel: (type: LaneType) => string;
+	getLaneEndMinute: (laneId: string) => number;
 };
 
 const laneTypes: LaneType[] = ['stage', 'tokuten', 'event'];
@@ -45,7 +46,8 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			namesText,
 			repeatCount,
 			restMinutes: repeatRestMinutes,
-			itemsBeforeRest: repeatItemsBeforeRest
+			itemsBeforeRest: repeatItemsBeforeRest,
+			endLimitMinute: options.getLaneEndMinute(draft?.laneId ?? '')
 		};
 	}
 
@@ -71,6 +73,15 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		const multi = multiBoothInput();
 		const maximum = multi ? maximumMultiBoothRepeatCount(multi) : maximumRepeatCount(repeatInput());
 		repeatCount = Math.max(1, Math.min(repeatCount, Math.max(1, maximum)));
+	}
+
+	function reconcileRepeatCountAtSave(): void {
+		const multi = multiBoothInput();
+		const maximum = multi ? maximumMultiBoothRepeatCount(multi) : maximumRepeatCount(repeatInput());
+		const names = multi?.copyAcrossBooths
+			? Object.values(boothRepeatNames).join('/')
+			: repeatNamesText;
+		repeatCount = reconcileRepeatCount(repeatCount, names, maximum);
 	}
 
 	function open(item: ScheduleItem, openingNew = false, lockDestination = false): void {
@@ -197,6 +208,7 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			options.notify('追加先レーンを選択してください');
 			return;
 		}
+		if (isNew && repeatEnabled) reconcileRepeatCountAtSave();
 		const multi = isNew && repeatEnabled ? multiBoothInput() : null;
 		const repeatedSpecs = isNew && repeatEnabled
 			? multi?.copyAcrossBooths
@@ -360,8 +372,6 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		},
 		setRepeatNamesText: (value: string) => {
 			repeatNamesText = value;
-			repeatCount = Math.max(repeatCount, countRepeatNames(value));
-			clampRepeatCount();
 		},
 		setCopyAcrossBooths: (value: boolean) => {
 			copyAcrossBooths = value;
@@ -376,8 +386,6 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		},
 		setBoothRepeatNames: (boothId: string, value: string) => {
 			boothRepeatNames = { ...boothRepeatNames, [boothId]: value };
-			repeatCount = Math.max(repeatCount, countRepeatNames(value));
-			clampRepeatCount();
 		},
 		setBoothOffsets: (value: number[]) => {
 			boothOffsets = value.map((offset) => Math.max(0, Math.round(offset / 5) * 5));

@@ -30,7 +30,8 @@ function createFixture() {
 		},
 		newId: () => `new-${nextId++}`,
 		notify: (message) => notices.push(message),
-		laneTypeLabel: (type) => type
+		laneTypeLabel: (type) => type,
+		getLaneEndMinute: () => 30 * 60
 	});
 	return { controller, getFestival: () => festival, notices };
 }

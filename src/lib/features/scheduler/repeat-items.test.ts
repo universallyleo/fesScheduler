@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRepeatPreview, buildRepeatedItemSpecs, countRepeatNames, maximumRepeatCount } from './repeat-items';
+import { buildRepeatPreview, buildRepeatedItemSpecs, countRepeatNames, maximumRepeatCount, reconcileRepeatCount } from './repeat-items';
 
 describe('repeated item scheduling', () => {
 	it('trims full-width slash-separated names and repeats the final name', () => {
@@ -51,6 +51,16 @@ describe('repeated item scheduling', () => {
 				itemsBeforeRest: 1
 			})
 		).toBe(0);
+	});
+
+	it('caps repeat count at the supplied schedule end', () => {
+		expect(maximumRepeatCount({ startMinute: 600, endMinute: 630, restMinutes: 0, itemsBeforeRest: 1 }, 690)).toBe(3);
+	});
+
+	it('reconciles entered names only at save time', () => {
+		expect(reconcileRepeatCount(1, ' A / B ／ C ', 2)).toBe(2);
+		expect(reconcileRepeatCount(1, ' A / B ', 8)).toBe(2);
+		expect(reconcileRepeatCount(4, '', 8)).toBe(4);
 	});
 
 	it('counts non-empty ASCII and full-width slash-separated names', () => {

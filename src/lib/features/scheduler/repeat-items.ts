@@ -6,6 +6,7 @@ export type RepeatItemInput = {
 	repeatCount: number;
 	restMinutes: number;
 	itemsBeforeRest: number;
+	endLimitMinute?: number;
 };
 
 export type RepeatItemSpec = {
@@ -41,15 +42,16 @@ export function maximumRepeatCount({
 	startMinute,
 	endMinute,
 	restMinutes,
-	itemsBeforeRest
-}: Pick<RepeatItemInput, 'startMinute' | 'endMinute' | 'restMinutes' | 'itemsBeforeRest'>): number {
+	itemsBeforeRest,
+	endLimitMinute
+}: Pick<RepeatItemInput, 'startMinute' | 'endMinute' | 'restMinutes' | 'itemsBeforeRest' | 'endLimitMinute'>, limitMinute = endLimitMinute ?? SCHEDULE_END_MINUTE): number {
 	const duration = endMinute - startMinute;
 	if (duration <= 0 || startMinute < 0) return 0;
 	let count = 0;
 	let cursor = startMinute;
 	const normalizedCadence = Math.max(1, Math.floor(itemsBeforeRest));
 	const normalizedRest = Math.max(0, restMinutes);
-	while (cursor + duration <= SCHEDULE_END_MINUTE) {
+	while (cursor + duration <= limitMinute) {
 		count += 1;
 		cursor += duration;
 		if (count % normalizedCadence === 0) cursor += normalizedRest;
@@ -57,11 +59,15 @@ export function maximumRepeatCount({
 	return count;
 }
 
-export function buildRepeatedItemSpecs(input: RepeatItemInput): RepeatItemSpec[] {
+export function reconcileRepeatCount(repeatCount: number, namesText: string, maximumCount: number): number {
+	return Math.min(Math.max(1, Math.floor(maximumCount)), Math.max(1, Math.floor(repeatCount), countRepeatNames(namesText)));
+}
+
+export function buildRepeatedItemSpecs(input: RepeatItemInput, limitMinute = input.endLimitMinute ?? SCHEDULE_END_MINUTE): RepeatItemSpec[] {
 	const duration = input.endMinute - input.startMinute;
 	const count = Math.min(
 		Math.max(0, Math.floor(input.repeatCount)),
-		maximumRepeatCount(input)
+		maximumRepeatCount(input, limitMinute)
 	);
 	const names = normalizedNames(input.namesText, input.fallbackName);
 	const cadence = Math.max(1, Math.floor(input.itemsBeforeRest));
@@ -76,8 +82,8 @@ export function buildRepeatedItemSpecs(input: RepeatItemInput): RepeatItemSpec[]
 	});
 }
 
-export function buildRepeatPreview(input: RepeatItemInput): RepeatPreviewEntry[] {
-	const items = buildRepeatedItemSpecs(input);
+export function buildRepeatPreview(input: RepeatItemInput, limitMinute = input.endLimitMinute ?? SCHEDULE_END_MINUTE): RepeatPreviewEntry[] {
+	const items = buildRepeatedItemSpecs(input, limitMinute);
 	const cadence = Math.max(1, Math.floor(input.itemsBeforeRest));
 	const rest = Math.max(0, input.restMinutes);
 	return items.flatMap((item, index) => {
