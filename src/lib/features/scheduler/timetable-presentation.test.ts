@@ -17,6 +17,17 @@ describe('item presentation color', () => {
 });
 
 describe('multi-booth item stacking', () => {
+	it('gives every booth an equal non-overlapping horizontal slice', () => {
+		const boothLane: Lane = { id: 'tokuten', name: '特典会', type: 'tokuten', booths: ['A', 'B', 'C'] };
+		const presentation = createTimetablePresentation(() => ({
+			items: [item], preferences: { language: 'ja', theme: 'light', snapMinutes: 5, timeZoom: 180, laneWidthMode: 'type', laneWidths: { stage: 140, tokuten: 140, event: 140 }, itemOverlapPolicy: 'allow', compactFavorites: false, blockColorMode: 'full' }, compactActive: false, minuteToY: (minute) => minute, laneForItem: () => boothLane, itemBottomLine: () => ''
+		}));
+
+		expect(presentation.itemStyle({ ...item, boothId: 'A' })).toContain('* 0);');
+		expect(presentation.itemStyle({ ...item, boothId: 'B' })).toContain('* 0.3333333333333333);');
+		expect(presentation.itemStyle({ ...item, boothId: 'C' })).toContain('width:calc((100% - 8px) * 0.3333333333333333);');
+	});
+
 	it('keeps overlapping booths on small local stack levels instead of using clock minutes', () => {
 		const boothLane: Lane = {
 			id: 'tokuten',

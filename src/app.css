@@ -973,6 +973,11 @@ select {
 	outline: 2px dashed var(--danger);
 	outline-offset: -2px;
 }
+.schedule-block.selected {
+	outline: 3px solid #fff;
+	outline-offset: -3px;
+	box-shadow: 0 0 0 2px #111, 0 4px 11px var(--shadow-block-hover);
+}
 .item-time {
 	color: inherit;
 	font:
@@ -1013,6 +1018,9 @@ select {
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 3;
 	line-clamp: 3;
+}
+.schedule-block:has(.item-booth-select) strong {
+	font-size: clamp(10px, 1vw, 14px);
 }
 .schedule-block small {
 	display: -webkit-box;
@@ -1066,6 +1074,20 @@ select {
 	color: var(--ink);
 	font-size: 9px;
 	line-height: 1;
+}
+.item-delete-button {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: color-mix(in srgb, #111 72%, transparent);
+	color: #fff;
+	font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
+	z-index: 2;
 }
 .resize-handle {
 	position: absolute;

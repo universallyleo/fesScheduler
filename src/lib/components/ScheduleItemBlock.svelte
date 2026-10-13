@@ -9,6 +9,7 @@
 		partialColor,
 		compactContent,
 		editing,
+		selected,
 		formatMinute,
 		bottomLine,
 		showBottomLine,
@@ -17,6 +18,7 @@
 		onOpenRelated,
 		onPointer,
 		onEdit,
+		onDelete,
 		onBoothChange
 	}: {
 		item: ScheduleItem;
@@ -26,6 +28,7 @@
 		partialColor: boolean;
 		compactContent: boolean;
 		editing: boolean;
+		selected: boolean;
 		formatMinute: (minute: number) => string;
 		bottomLine: string;
 		showBottomLine: boolean;
@@ -34,21 +37,31 @@
 		onOpenRelated: () => void;
 		onPointer: (event: PointerEvent, kind: 'move' | 'resize') => void;
 		onEdit: () => void;
+		onDelete: () => void;
 		onBoothChange: (boothId: string) => void;
 	} = $props();
 </script>
 
-<button
+<div
+	role="button"
+	tabindex="0"
 	class:dimmed={!visible}
 	class:conflict
 	class:partial-color={partialColor}
 	class:compact-content={compactContent}
 	class:editing
+	class:selected
 	class="schedule-block"
 	{style}
 	title={compactContent && item.subContent ? item.subContent : undefined}
 	aria-label={`${item.artistLabel} ${formatMinute(item.startMinute)}–${formatMinute(item.endMinute)}`}
 	onclick={() => (editing ? onEdit() : onCycleFavorite())}
+	onkeydown={(event) => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			editing ? onEdit() : onCycleFavorite();
+		}
+	}}
 	oncontextmenu={(event) => {
 		event.preventDefault();
 		onOpenRelated();
@@ -73,9 +86,10 @@
 				{#each booths as booth (booth)}<option value={booth}>{booth}</option>{/each}
 			</select>
 		{/if}
-		{#if showBottomLine}<em>{bottomLine}</em>{/if}
+		{#if showBottomLine && !(editing && booths.length > 1)}<em>{bottomLine}</em>{/if}
 	</footer>
 	{#if editing}
+		<button class="item-delete-button" aria-label={`${item.artistLabel}を削除`} title="項目を削除" onclick={(event) => { event.stopPropagation(); onDelete(); }} onpointerdown={(event) => event.stopPropagation()}>×</button>
 		<span
 			class="resize-handle"
 			role="separator"
@@ -86,4 +100,4 @@
 			}}
 		></span>
 	{/if}
-</button>
+</div>

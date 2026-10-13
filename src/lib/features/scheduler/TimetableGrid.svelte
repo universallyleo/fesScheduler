@@ -47,6 +47,8 @@
 		itemBottomLine: (item: ScheduleItem) => string;
 		shouldShowItemBottomLine: (item: ScheduleItem) => boolean;
 		editMode: boolean;
+		selectedItemIds: string[];
+		multiSelectEnabled: boolean;
 		onToggleEdit: () => void;
 		openFestivalSettings: () => void;
 		undoCount: number;
@@ -60,6 +62,8 @@
 		openRelated: (item: ScheduleItem) => void;
 		beginItemPointer: (event: PointerEvent, item: ScheduleItem, kind: 'move' | 'resize') => void;
 		openEditor: (item: ScheduleItem, isNew?: boolean) => void;
+		activateItem: (item: ScheduleItem) => void;
+		deleteItem: (itemId: string) => void;
 		changeItemBooth: (itemId: string, boothId: string) => void;
 		creating: CreateState;
 		compactPreview: { top: number; height: number; duration: number } | null;
@@ -110,6 +114,8 @@
 		itemBottomLine,
 		shouldShowItemBottomLine,
 		editMode,
+		selectedItemIds,
+		multiSelectEnabled,
 		onToggleEdit,
 		openFestivalSettings,
 		undoCount,
@@ -123,6 +129,8 @@
 		openRelated,
 		beginItemPointer,
 		openEditor,
+		activateItem,
+		deleteItem,
 		changeItemBooth,
 		creating,
 		compactPreview,
@@ -295,6 +303,7 @@
 											partialColor={preferences.blockColorMode === 'partial'}
 											compactContent={itemHasLimitedContent(item)}
 											editing={editMode}
+											selected={selectedItemIds.includes(item.id)}
 											{formatMinute}
 											bottomLine={itemBottomLine(item)}
 											showBottomLine={shouldShowItemBottomLine(item)}
@@ -302,7 +311,8 @@
 											onCycleFavorite={() => cycleItem(item.id)}
 											onOpenRelated={() => openRelated(item)}
 											onPointer={(event, kind) => beginItemPointer(event, item, kind)}
-											onEdit={() => openEditor(item)}
+											onEdit={() => activateItem(item)}
+											onDelete={() => deleteItem(item.id)}
 											onBoothChange={(boothId) => changeItemBooth(item.id, boothId)}
 										/>
 									{/each}
@@ -339,6 +349,7 @@
 												partialColor={preferences.blockColorMode === 'partial'}
 												compactContent={itemHasLimitedContent(item)}
 												editing={editMode}
+											selected={selectedItemIds.includes(item.id)}
 												{formatMinute}
 												bottomLine={itemBottomLine(item)}
 												showBottomLine={shouldShowItemBottomLine(item)}
@@ -346,7 +357,8 @@
 												onCycleFavorite={() => cycleItem(item.id)}
 												onOpenRelated={() => openRelated(item)}
 												onPointer={(event, kind) => beginItemPointer(event, item, kind)}
-												onEdit={() => openEditor(item)}
+												onEdit={() => activateItem(item)}
+												onDelete={() => deleteItem(item.id)}
 											onBoothChange={(boothId) => changeItemBooth(item.id, boothId)}
 											/>
 										{/each}

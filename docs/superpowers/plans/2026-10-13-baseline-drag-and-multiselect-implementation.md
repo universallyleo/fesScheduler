@@ -250,31 +250,31 @@ src/
 - Produces: `selected` card presentation, equal booth geometry, card delete callback, and edit-only booth select behavior.
 - Consumed by Task 7's grid composition.
 
-- [ ] **Step 1: Write failing presentation tests**
+- [x] **Step 1: Write failing presentation tests**
 
   Assert that a three-booth 特典会 lane gives every booth exactly one third of the lane and left positions `0`, `1/3`, and `2/3`, regardless of start times. Assert that multi-booth cards receive a compact main-content class and that selected cards receive a selected presentation flag.
 
-- [ ] **Step 2: Run presentation tests to verify the new cases fail**
+- [x] **Step 2: Run presentation tests to verify the new cases fail**
 
   Run: `bun run test -- src/lib/features/scheduler/timetable-presentation.test.ts`
 
   Expected: FAIL on equal-width or selected-card expectations.
 
-- [ ] **Step 3: Make booth layout deterministic and non-overlapping**
+- [x] **Step 3: Make booth layout deterministic and non-overlapping**
 
   Replace start-time-sensitive booth width logic with `width = 100 / boothCount` and `left = boothIndex * width`. Preserve the usual static booth bottom line in display mode; in edit mode render the compact select in its place, not alongside it.
 
-- [ ] **Step 4: Add card-only interaction affordances**
+- [x] **Step 4: Add card-only interaction affordances**
 
   Render selected cards with a high-contrast frame, decrease multi-booth main-content size, give start/end times one shared font rule, and add an immediate delete icon in the card's top-right edit-mode controls. Card activation must first consume the controller's post-drag suppression and then route to selection or editing.
 
-- [ ] **Step 5: Run focused verification**
+- [x] **Step 5: Run focused verification**
 
   Run: `bun run test -- src/lib/features/scheduler/timetable-presentation.test.ts`
 
   Expected: PASS.
 
-- [ ] **Step 6: Commit card presentation**
+- [x] **Step 6: Commit card presentation**
 
   ```bash
   git add src/lib/features/scheduler/timetable-presentation.ts src/lib/features/scheduler/timetable-presentation.test.ts src/lib/components/ScheduleItemBlock.svelte src/app.css

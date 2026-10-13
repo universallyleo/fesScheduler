@@ -60,21 +60,8 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 				: readableTextColor(item.color ?? lane?.color ?? '#a8adb5');
 		const booths = !compactActive && lane?.type === 'tokuten' ? lane.booths ?? [] : [];
 		const boothIndex = booths.length ? Math.max(0, booths.indexOf(displayed.boothId ?? booths[0] ?? '')) : 0;
-		const sameStartBooths = new Set(
-			booths.length
-				? displayedItems
-						.filter((candidate) => candidate.laneId === displayed.laneId && candidate.startMinute === displayed.startMinute)
-						.map((candidate) => candidate.boothId)
-				: []
-		);
-		const hasSimultaneousBooths = sameStartBooths.size > 1;
-		const boothWidth =
-			booths.length <= 1
-				? 1
-				: hasSimultaneousBooths
-					? 1 / booths.length
-					: Math.min(0.62, 1 / booths.length + 0.24);
-		const boothLeft = booths.length > 1 ? (boothIndex * (1 - boothWidth)) / (booths.length - 1) : 0;
+		const boothWidth = booths.length > 1 ? 1 / booths.length : 1;
+		const boothLeft = booths.length > 1 ? boothIndex / booths.length : 0;
 		const itemStackLevel =
 			1 +
 			displayedItems.filter(

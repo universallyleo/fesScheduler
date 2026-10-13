@@ -134,6 +134,8 @@
 	const creating = $derived(gridInteraction.creating);
 	const reorderingLaneId = $derived(gridInteraction.reorderingLaneId);
 	const reorderTargetLaneId = $derived(gridInteraction.reorderTargetLaneId);
+	const selectedItemIds = $derived(gridInteraction.selectedItemIds);
+	const multiSelectEnabled = $derived(gridInteraction.multiSelectEnabled);
 	const bulkEntry = createBulkEntryController({
 		getLanes: () => lanes,
 		getSelectedDayId: () => selectedDayId,
@@ -430,7 +432,10 @@
 	}
 	function toggleEditMode(): void {
 		editMode = !editMode;
-		if (!editMode) laneEditor.close();
+		if (!editMode) {
+			laneEditor.close();
+			gridInteraction.clearSelection();
+		}
 	}
 	function cycleItem(itemId: string): void {
 		const current = items.find((item) => item.id === itemId);
@@ -451,6 +456,19 @@
 				.flatMap((candidate) => candidate.items)
 				.find((item) => item.id === itemId);
 			if (target) target.boothId = boothId;
+		});
+	}
+	function activateItem(item: ScheduleItem): void {
+		if (gridInteraction.consumeSuppressedCardClick(item.id)) return;
+		if (editMode && multiSelectEnabled) {
+			gridInteraction.toggleItemSelection(item);
+			return;
+		}
+		itemEditor.open(item);
+	}
+	function deleteItem(itemId: string): void {
+		updateFestival((next) => {
+			for (const targetDay of next.days) targetDay.items = targetDay.items.filter((item) => item.id !== itemId);
 		});
 	}
 	function openRelated(item: ScheduleItem): void {
@@ -609,7 +627,7 @@
 					</details>
 				</section>{/if}
 			<TimetableGrid
-				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} beginLaneResize={gridInteraction.beginLaneResize} updateLaneResize={gridInteraction.updateLaneResize} finishLaneResize={gridInteraction.finishLaneResize} laneResizePreview={gridInteraction.laneResizePreview} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} onToggleEdit={toggleEditMode} {openFestivalSettings} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
+				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} beginLaneResize={gridInteraction.beginLaneResize} updateLaneResize={gridInteraction.updateLaneResize} finishLaneResize={gridInteraction.finishLaneResize} laneResizePreview={gridInteraction.laneResizePreview} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {selectedItemIds} {multiSelectEnabled} onToggleEdit={toggleEditMode} {openFestivalSettings} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} {activateItem} {deleteItem} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
 				onOpenLaneEditor={laneEditor.open}
 				onOpenLaneInfo={(lane) => (infoLaneId = lane.id)}
 			/>
