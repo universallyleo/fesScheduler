@@ -19,6 +19,7 @@ export interface Lane {
 	venueName?: string;
 	venueUrl?: string;
 	openingMinute?: number;
+	endMinute?: number;
 	color?: string;
 	backgroundColor?: string;
 	booths?: string[];

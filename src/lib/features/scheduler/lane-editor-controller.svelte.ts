@@ -43,13 +43,21 @@ export function createLaneEditorController(options: LaneEditorOptions) {
 	}
 
 	function updateOpening(value: string): void {
+		updateTime('openingMinute', value);
+	}
+
+	function updateEnd(value: string): void {
+		updateTime('endMinute', value);
+	}
+
+	function updateTime(property: 'openingMinute' | 'endMinute', value: string): void {
 		if (!draft) return;
 		if (!value.trim()) {
-			draft.openingMinute = undefined;
+			draft[property] = undefined;
 			return;
 		}
 		const normalized = normalizeToFiveMinuteTime(value);
-		if (normalized) draft.openingMinute = parseMinute(normalized);
+		if (normalized) draft[property] = parseMinute(normalized);
 	}
 
 	function save(): void {
@@ -60,6 +68,7 @@ export function createLaneEditorController(options: LaneEditorOptions) {
 			venueName: draft.venueName?.trim() || undefined,
 			venueUrl: draft.venueUrl?.trim() || undefined,
 			openingMinute: draft.openingMinute,
+			endMinute: draft.endMinute,
 			color: draft.color || '#a8adb5',
 			backgroundColor: draft.backgroundColor,
 			booths: draft.type === 'tokuten' ? draft.booths?.filter(Boolean) : undefined
@@ -92,6 +101,7 @@ export function createLaneEditorController(options: LaneEditorOptions) {
 		open,
 		close,
 		updateOpening,
+		updateEnd,
 		save
 	};
 }

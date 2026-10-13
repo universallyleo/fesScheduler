@@ -77,31 +77,31 @@ src/
 - Produces: optional persisted `Lane.endMinute?: number`.
 - Consumed by Tasks 2–4 and route composition in Task 7.
 
-- [ ] **Step 1: Write failing end-bound tests**
+- [x] **Step 1: Write failing end-bound tests**
 
   Add `lane-time-bounds.test.ts` cases asserting: lane `endMinute` wins over a day end; a day `displayEndMinute` is used when the lane has no end; and an unbounded lane resolves to `30 * 60`.
 
-- [ ] **Step 2: Run the new bound test to verify it fails**
+- [x] **Step 2: Run the new bound test to verify it fails**
 
   Run: `bun run test -- src/lib/features/scheduler/lane-time-bounds.test.ts`
 
   Expected: FAIL because the module and helper do not exist.
 
-- [ ] **Step 3: Implement the persisted lane end and pure helper**
+- [x] **Step 3: Implement the persisted lane end and pure helper**
 
   Add `endMinute?: number` to `Lane`. Implement `effectiveLaneEndMinute` with the exact precedence above, without inspecting UI state or preferences.
 
-- [ ] **Step 4: Add the optional `終了時刻` field to lane editing**
+- [x] **Step 4: Add the optional `終了時刻` field to lane editing**
 
   Reuse the existing five-minute time-input normalization and interval-delta controls. The controller must copy, validate, and persist `endMinute`; an empty input clears it.
 
-- [ ] **Step 5: Run focused verification**
+- [x] **Step 5: Run focused verification**
 
   Run: `bun run test -- src/lib/features/scheduler/lane-time-bounds.test.ts`
 
   Expected: PASS.
 
-- [ ] **Step 6: Commit the bounded-lane foundation**
+- [x] **Step 6: Commit the bounded-lane foundation**
 
   ```bash
   git add src/lib/types.ts src/lib/components/modals/LaneEditorModal.svelte src/lib/features/scheduler/lane-editor-controller.svelte.ts src/lib/features/scheduler/lane-time-bounds.ts src/lib/features/scheduler/lane-time-bounds.test.ts

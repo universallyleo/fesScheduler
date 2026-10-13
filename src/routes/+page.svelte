@@ -699,6 +699,11 @@
 			if (!input.value.trim()) laneEditor.updateOpening('');
 			else normalizeTimeField(event, laneEditor.updateOpening);
 		}}
+		onNormalizeEnd={(event) => {
+			const input = event.currentTarget as HTMLInputElement;
+			if (!input.value.trim()) laneEditor.updateEnd('');
+			else normalizeTimeField(event, laneEditor.updateEnd);
+		}}
 		onClose={laneEditor.close}
 		onSave={laneEditor.save}
 	/>
