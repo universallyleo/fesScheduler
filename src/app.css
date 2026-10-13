@@ -1000,6 +1000,7 @@ select {
 	font-weight: 800;
 	line-height: 1;
 }
+.schedule-block.editing .item-favorite { right: 21px; }
 .favorite-heart {
 	font-size: 12px;
 	line-height: 1;
@@ -1089,6 +1090,13 @@ select {
 	font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
 	z-index: 2;
 }
+.overlap-policy-options { border: 0; display: grid; gap: 8px; margin: 0; padding: 12px 0; }
+.overlap-policy-options > label { display: grid; grid-template-columns: auto 100px 1fr; gap: 9px; align-items: center; padding: 9px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+.overlap-policy-options > label.active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+.overlap-policy-options svg { width: 100px; height: 44px; fill: var(--lane-color, var(--accent)); stroke: var(--ink); stroke-width: 2; }
+.overlap-policy-options svg rect + rect { fill: color-mix(in srgb, var(--lane-color, var(--accent)) 58%, transparent); }
+.overlap-policy-options small { display: block; margin-top: 2px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .overlap-policy-options svg * { animation: none !important; transition: none !important; } }
 .resize-handle {
 	position: absolute;
 	right: 0;

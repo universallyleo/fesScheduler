@@ -120,8 +120,16 @@
 		draft.itemType = type;
 		draft.color = type === currentLane()?.type ? undefined : type === 'tokuten' ? '#d7d9d6' : currentLane()?.color;
 	}
+	function handleDeleteKey(event: KeyboardEvent): void {
+		if (event.key !== 'Delete') return;
+		const target = event.target;
+		if (target instanceof Element && target.closest('input, textarea, select, button, a, [contenteditable="true"], [role="button"]')) return;
+		event.preventDefault();
+		onDelete();
+	}
 </script>
 
+<svelte:window onkeydown={handleDeleteKey} />
 <ModalShell className="editor-modal" labelledBy="edit-title" {onClose}>
 	<ModalHeader eyebrow={isNew ? '新規項目' : '項目を編集'} title={draft.artistLabel || '新しい項目'} titleId="edit-title" closeLabel={closeLabel} {onClose} />
 	<div class="form-grid">

@@ -21,7 +21,7 @@
 		if (event.target === event.currentTarget) onClose();
 	}}
 >
-	<div class={`modal ${className}`} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+	<div class={`modal ${className}`} role="dialog" tabindex="-1" aria-modal="true" aria-labelledby={labelledBy}>
 		{@render children()}
 	</div>
 </div>

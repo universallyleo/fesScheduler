@@ -295,29 +295,29 @@ src/
 - Produces: `OverlapPolicyModal` with an accessible `重なり時の動作` radio group and a close callback.
 - Consumed by Task 7.
 
-- [ ] **Step 1: Add a failing browser interaction test for the policy chooser**
+- [x] **Step 1: Add a failing browser interaction test for the policy chooser**
 
   In `src/routes/scheduler.e2e.ts`, enter edit mode, open `重なり時の動作`, assert the three Japanese options are exposed as radio controls, select `前後をずらす`, close the modal, and reopen it to assert that policy remains selected.
 
-- [ ] **Step 2: Implement `OverlapPolicyModal.svelte`**
+- [x] **Step 2: Implement `OverlapPolicyModal.svelte`**
 
   Render `重ねる（警告）`, `空きブースへ移動`, and `前後をずらす` as Japanese radio choices. Pair each with a small inline SVG showing, respectively, overlap plus warning, a lateral booth move, and a later card touching the first card's end. Honour `prefers-reduced-motion` by disabling motion while retaining the diagrams and accessible text.
 
-- [ ] **Step 3: Replace inline display settings**
+- [x] **Step 3: Replace inline display settings**
 
   Remove the overlap-policy controls from `TimetableToolbar.svelte`. Add an edit-panel `重なり時の動作` trigger to `TimetableGrid.svelte`, alongside the new `複数選択` toggle, and route opening/closing state through its parent.
 
-- [ ] **Step 4: Set the default policy to cascade**
+- [x] **Step 4: Set the default policy to cascade**
 
   Ensure newly initialized preferences use `cascade` (`前後をずらす`) without overwriting an existing saved preference.
 
-- [ ] **Step 5: Verify component and type checks**
+- [x] **Step 5: Verify component and type checks**
 
   Run: `bun run check`; then `bun run test:e2e -- scheduler.e2e.ts`
 
   Expected: PASS when Playwright's browser runtime is installed; otherwise record the missing-runtime result and continue with `bun run check`.
 
-- [ ] **Step 6: Commit overlap controls**
+- [x] **Step 6: Commit overlap controls**
 
   ```bash
   git add src/lib/components/modals/OverlapPolicyModal.svelte src/lib/features/scheduler/TimetableToolbar.svelte src/lib/features/scheduler/TimetableGrid.svelte src/app.css src/routes/scheduler.e2e.ts
@@ -337,29 +337,29 @@ src/
 - Consumes: bounds helper (Task 1), item-editor repeat reconciliation (Task 2), controller actions (Task 4), card/grid state (Task 5), and overlap modal (Task 6).
 - Produces: complete route-level editing behavior, persistence, and safe keyboard deletion.
 
-- [ ] **Step 1: Add failing controller and browser tests for mode transitions and deletion**
+- [x] **Step 1: Add failing controller and browser tests for mode transitions and deletion**
 
   In the controller test, assert that leaving edit mode clears selection. In `scheduler.e2e.ts`, open an item editor, focus a text input and press Delete to assert the item remains, then focus the modal backdrop and press Delete to assert the item is removed.
 
-- [ ] **Step 2: Wire effective bounds into every edit entry point**
+- [x] **Step 2: Wire effective bounds into every edit entry point**
 
   Resolve each lane's effective end from its current day and pass it to drag sessions, repeat previews, repeat saves, and single item validation. Maintain the existing five-minute snapping and use 30:00 only through Task 1's helper.
 
-- [ ] **Step 3: Wire selection and overlap modal state into the route and grid**
+- [x] **Step 3: Wire selection and overlap modal state into the route and grid**
 
   Keep `複数選択` edit-mode-only. Route card activation through the controller so it chooses selection or item editing; pass the selected state to cards; persist policy changes immediately through preferences; clear selection when the edit panel exits.
 
-- [ ] **Step 4: Implement safe immediate deletion**
+- [x] **Step 4: Implement safe immediate deletion**
 
   Connect the card top-right delete affordance to the existing deletion mutation without an extra confirmation. In `ItemEditorModal.svelte`, handle Delete only when the event target is not interactive; ordinary text editing and every focused control retain normal Delete behavior.
 
-- [ ] **Step 5: Run focused verification**
+- [x] **Step 5: Run focused verification**
 
   Run: `bun run test -- src/lib/features/scheduler/grid-interaction-controller.test.ts src/lib/features/scheduler/item-editor-controller.test.ts`
 
   Expected: PASS.
 
-- [ ] **Step 6: Commit composed editing behavior**
+- [x] **Step 6: Commit composed editing behavior**
 
   ```bash
   git add src/routes/+page.svelte src/lib/components/modals/ItemEditorModal.svelte src/lib/features/scheduler/TimetableGrid.svelte src/lib/features/scheduler/grid-interaction-controller.test.ts src/routes/scheduler.e2e.ts
@@ -375,32 +375,39 @@ src/
 - Consumes: all completed implementation tasks.
 - Produces: verified completion record with every checkbox marked only after the associated command passes.
 
-- [ ] **Step 1: Run static and unit verification**
+- [x] **Step 1: Run static and unit verification**
 
   Run: `bun run check`; then `bun run test:unit -- --run`.
 
   Expected: both commands PASS.
 
-- [ ] **Step 2: Build the production bundle**
+- [x] **Step 2: Build the production bundle**
 
   Run: `bun run build`
 
   Expected: PASS.
 
-- [ ] **Step 3: Run browser tests when a Playwright browser is installed**
+- [x] **Step 3: Run browser tests when a Playwright browser is installed**
 
   Run: `bun run test:e2e`
 
   Expected: PASS. If Playwright reports a missing browser executable, record that environmental limitation rather than claiming the suite passed.
 
-- [ ] **Step 4: Mark completed implementation steps and record verification results**
+- [x] **Step 4: Mark completed implementation steps and record verification results**
 
   Update this plan after each completed task and add exact final command outcomes below this task.
 
-- [ ] **Step 5: Commit the completion record**
+- [x] **Step 5: Commit the completion record**
 
   ```bash
   git add docs/superpowers/plans/2026-10-13-baseline-drag-and-multiselect-implementation.md
   git commit -m "docs: record baseline drag implementation"
   ```
+
+## Verification record
+
+- `bun run check` — passed with 0 errors and 0 warnings.
+- `bun run test:unit -- --run` — passed: 14 files, 62 tests.
+- `bun run build` — passed.
+- `bun run test:e2e` — attempted but could not execute assertions: the Playwright Chromium executable is not installed. The retry also found its previous preview server still bound to port 4173. The application implementation and browser tests are present; install Chromium and release port 4173 before rerunning.
 

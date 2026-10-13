@@ -19,6 +19,7 @@
 	import BulkEntryModal from '$lib/components/modals/BulkEntryModal.svelte';
 	import FestivalSettingsModal from '$lib/components/modals/FestivalSettingsModal.svelte';
 	import LaneInfoModal from '$lib/components/modals/LaneInfoModal.svelte';
+	import OverlapPolicyModal from '$lib/components/modals/OverlapPolicyModal.svelte';
 	import RelatedItemsModal from '$lib/components/modals/RelatedItemsModal.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import FestivalControls from '$lib/components/FestivalControls.svelte';
@@ -57,7 +58,7 @@
 		timeZoom: 216,
 		laneWidthMode: 'type',
 		laneWidths: { stage: 152, tokuten: 152, event: 152 },
-		itemOverlapPolicy: 'allow',
+		itemOverlapPolicy: 'cascade',
 		compactFavorites: false,
 		blockColorMode: 'full'
 	};
@@ -75,6 +76,7 @@
 	let searchQuery = $state('');
 	let editMode = $state(false);
 	let settingsOpen = $state(false);
+	let overlapPolicyOpen = $state(false);
 	const isLoading = $derived(session.isLoading);
 	const itemEditor = createItemEditorController({
 		getItems: () => items,
@@ -627,7 +629,7 @@
 					</details>
 				</section>{/if}
 			<TimetableGrid
-				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} beginLaneResize={gridInteraction.beginLaneResize} updateLaneResize={gridInteraction.updateLaneResize} finishLaneResize={gridInteraction.finishLaneResize} laneResizePreview={gridInteraction.laneResizePreview} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {selectedItemIds} {multiSelectEnabled} onToggleEdit={toggleEditMode} {openFestivalSettings} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} {activateItem} {deleteItem} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
+				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} beginLaneResize={gridInteraction.beginLaneResize} updateLaneResize={gridInteraction.updateLaneResize} finishLaneResize={gridInteraction.finishLaneResize} laneResizePreview={gridInteraction.laneResizePreview} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {selectedItemIds} {multiSelectEnabled} onToggleEdit={toggleEditMode} {openFestivalSettings} openOverlapSettings={() => (overlapPolicyOpen = true)} setMultiSelectEnabled={gridInteraction.setMultiSelectEnabled} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} {activateItem} {deleteItem} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
 				onOpenLaneEditor={laneEditor.open}
 				onOpenLaneInfo={(lane) => (infoLaneId = lane.id)}
 			/>
@@ -702,9 +704,7 @@
 		onRemoveBoothOffset={itemEditor.removeBoothOffset}
 		onTogglePair={itemEditor.togglePair}
 		onClose={itemEditor.close}
-		onDelete={() => {
-			if (window.confirm('この項目を削除しますか？')) itemEditor.remove();
-		}}
+		onDelete={itemEditor.remove}
 		onDuplicate={() => itemEditor.duplicate(editDraft)}
 		onSave={itemEditor.save}
 	/>
@@ -734,6 +734,16 @@
 		}}
 		onClose={laneEditor.close}
 		onSave={laneEditor.save}
+	/>
+{/if}
+{#if overlapPolicyOpen}
+	<OverlapPolicyModal
+		policy={preferences.itemOverlapPolicy}
+		onChange={(policy) => {
+			preferences.itemOverlapPolicy = policy;
+			session.persistPreferences();
+		}}
+		onClose={() => (overlapPolicyOpen = false)}
 	/>
 {/if}
 {#if infoLane}

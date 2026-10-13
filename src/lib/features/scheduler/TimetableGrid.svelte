@@ -64,6 +64,8 @@
 		openEditor: (item: ScheduleItem, isNew?: boolean) => void;
 		activateItem: (item: ScheduleItem) => void;
 		deleteItem: (itemId: string) => void;
+		openOverlapSettings: () => void;
+		setMultiSelectEnabled: (value: boolean) => void;
 		changeItemBooth: (itemId: string, boothId: string) => void;
 		creating: CreateState;
 		compactPreview: { top: number; height: number; duration: number } | null;
@@ -131,6 +133,8 @@
 		openEditor,
 		activateItem,
 		deleteItem,
+		openOverlapSettings,
+		setMultiSelectEnabled,
 		changeItemBooth,
 		creating,
 		compactPreview,
@@ -393,6 +397,8 @@
 					<section class="floating-edit-panel" aria-label={t('editTools')}>
 						<div class="floating-edit-row floating-settings-row">
 							<button class="floating-settings-button" onclick={openFestivalSettings}>⚙ フェス設定</button>
+							<button class="quiet-button" onclick={openOverlapSettings}>重なり時の動作</button>
+							<label class="quiet-button multi-select-toggle"><input type="checkbox" checked={multiSelectEnabled} onchange={(event) => setMultiSelectEnabled((event.currentTarget as HTMLInputElement).checked)} /> 複数選択</label>
 							<button class="floating-exit-edit" onclick={onToggleEdit}>{t('exitEdit')}</button>
 						</div>
 						<div class="floating-edit-row floating-item-history-row">
