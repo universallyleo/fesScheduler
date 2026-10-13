@@ -164,31 +164,31 @@ src/
 - Produces: `resolveItemDrop(input: BaselineDropInput): ItemDropResolution`, whose patches include selected movement plus only collisions reached from that baseline.
 - Consumed by Task 4.
 
-- [ ] **Step 1: Write failing baseline-resolver tests**
+- [x] **Step 1: Write failing baseline-resolver tests**
 
   Cover these exact cases: dragging B from `12:40–13:10` down past C's original `13:15–13:45` puts C immediately after B; recomputing B at `12:30–13:00` restores C to `13:15–13:45`; a two-item selection preserves its original offset; only unselected cards in the same booth can cascade; and no patch may extend past the supplied end minute.
 
-- [ ] **Step 2: Run the resolver tests to verify they fail**
+- [x] **Step 2: Run the resolver tests to verify they fail**
 
   Run: `bun run test -- src/lib/features/scheduler/item-drop-resolution.test.ts`
 
   Expected: FAIL on group input, baseline restoration, or supplied end-bound behavior.
 
-- [ ] **Step 3: Define baseline resolver input and output types**
+- [x] **Step 3: Define baseline resolver input and output types**
 
   Add `BaselineDropInput` and any supporting selection/patch types to the type modules. It must contain original items, the selected IDs, one snapped delta, drag direction, the active lane, policy, and resolved limit. Do not embed Svelte state or mutate its input.
 
-- [ ] **Step 4: Implement group motion and reversible cascade resolution**
+- [x] **Step 4: Implement group motion and reversible cascade resolution**
 
   First move every selected item by one shared, clamped delta. For `cascade`, scan original unselected same-booth items in drag direction; move an item only after a true collision, and stop the propagation when an original gap absorbs it. For `allow`, retain the conflict warning. For `free-booth`, preserve a multi-selection's booth assignments and return the normal conflict outcome if it cannot fit.
 
-- [ ] **Step 5: Run focused verification**
+- [x] **Step 5: Run focused verification**
 
   Run: `bun run test -- src/lib/features/scheduler/item-drop-resolution.test.ts`
 
   Expected: PASS.
 
-- [ ] **Step 6: Commit baseline drop resolution**
+- [x] **Step 6: Commit baseline drop resolution**
 
   ```bash
   git add src/lib/types.ts src/lib/ui-types.ts src/lib/features/scheduler/item-drop-resolution.ts src/lib/features/scheduler/item-drop-resolution.test.ts

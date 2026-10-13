@@ -18,12 +18,11 @@ export type ItemDropInput = {
 	proposedEndMinute: number;
 	direction: 'up' | 'down';
 	policy: ItemOverlapPolicy;
+	selectedItemIds?: string[];
+	endMinute?: number;
 };
 
-function overlaps(
-	first: Pick<ScheduleItem, 'startMinute' | 'endMinute'>,
-	second: Pick<ScheduleItem, 'startMinute' | 'endMinute'>
-): boolean {
+function overlaps(first: Pick<ScheduleItem, 'startMinute' | 'endMinute'>, second: Pick<ScheduleItem, 'startMinute' | 'endMinute'>): boolean {
 	return first.startMinute < second.endMinute && second.startMinute < first.endMinute;
 }
 
@@ -31,119 +30,74 @@ function sameBooth(first: ScheduleItem, second: ScheduleItem): boolean {
 	return (first.boothId ?? '') === (second.boothId ?? '');
 }
 
-function patchItem(item: ScheduleItem, patches: ItemDropPatch[]): ScheduleItem {
-	const patch = patches.find((candidate) => candidate.id === item.id);
-	return patch ? { ...item, ...patch } : item;
+function toPatch(item: ScheduleItem, startMinute: number, endMinute: number, boothId?: string): ItemDropPatch {
+	return { id: item.id, startMinute, endMinute, ...(boothId && boothId !== item.boothId ? { boothId } : {}) };
 }
 
-function conflictsFor(
-	item: ScheduleItem,
-	items: ScheduleItem[],
-	patches: ItemDropPatch[]
-): boolean {
-	const patchedItem = patchItem(item, patches);
-	return items.some((candidate) => {
-		if (candidate.id === item.id) return false;
-		const patchedCandidate = patchItem(candidate, patches);
-		return sameBooth(patchedItem, patchedCandidate) && overlaps(patchedItem, patchedCandidate);
+function applyPatches(item: ScheduleItem, patches: ItemDropPatch[]): ScheduleItem {
+	return { ...item, ...(patches.find((patch) => patch.id === item.id) ?? {}) };
+}
+
+function conflicts(items: ScheduleItem[], patches: ItemDropPatch[]): boolean {
+	return items.some((item, index) => {
+		const displayed = applyPatches(item, patches);
+		return items.slice(index + 1).some((candidate) => {
+			const displayedCandidate = applyPatches(candidate, patches);
+			return sameBooth(displayed, displayedCandidate) && overlaps(displayed, displayedCandidate);
+		});
 	});
 }
 
-function placementPatch(
-	item: ScheduleItem,
-	startMinute: number,
-	endMinute: number,
-	boothId?: string
-): ItemDropPatch {
-	return {
-		id: item.id,
-		startMinute,
-		endMinute,
-		...(boothId && boothId !== item.boothId ? { boothId } : {})
-	};
+function clampDelta(selected: ScheduleItem[], proposedDelta: number, lane: Lane, endMinute: number): number {
+	const firstStart = Math.min(...selected.map((item) => item.startMinute));
+	const lastEnd = Math.max(...selected.map((item) => item.endMinute));
+	return Math.max((lane.openingMinute ?? 0) - firstStart, Math.min(proposedDelta, endMinute - lastEnd));
 }
 
-function laneItems(input: ItemDropInput): ScheduleItem[] {
-	return input.items.filter((candidate) => candidate.laneId === input.lane.id);
+function resolveCascade(selected: ScheduleItem[], unselected: ScheduleItem[], patches: ItemDropPatch[], direction: 'up' | 'down', lane: Lane, endMinute: number): ItemDropResolution {
+	const cascadePatches = [...patches];
+	let hasConflict = false;
+	for (const boothId of new Set(selected.map((item) => item.boothId ?? ''))) {
+		const moved = selected.filter((item) => (item.boothId ?? '') === boothId).map((item) => applyPatches(item, cascadePatches));
+		const candidates = unselected.filter((item) => (item.boothId ?? '') === boothId).sort((left, right) => direction === 'down' ? left.startMinute - right.startMinute : right.endMinute - left.endMinute);
+		let boundary = direction === 'down' ? Math.max(...moved.map((item) => item.endMinute)) : Math.min(...moved.map((item) => item.startMinute));
+		const groupStart = Math.min(...moved.map((item) => item.startMinute));
+		const groupEnd = Math.max(...moved.map((item) => item.endMinute));
+		for (const candidate of candidates) {
+			const duration = candidate.endMinute - candidate.startMinute;
+			if (direction === 'down') {
+				if (candidate.startMinute >= boundary) break;
+				if (candidate.endMinute <= groupStart) continue;
+				if (boundary + duration > endMinute) { hasConflict = true; break; }
+				cascadePatches.push(toPatch(candidate, boundary, boundary + duration));
+				boundary += duration;
+			} else {
+				if (candidate.endMinute <= boundary) break;
+				if (candidate.startMinute >= groupEnd) continue;
+				if (boundary - duration < (lane.openingMinute ?? 0)) { hasConflict = true; break; }
+				cascadePatches.push(toPatch(candidate, boundary - duration, boundary));
+				boundary -= duration;
+			}
+		}
+	}
+	return { patches: cascadePatches, hasConflict: hasConflict || conflicts([...selected, ...unselected], cascadePatches) };
 }
 
 export function resolveItemDrop(input: ItemDropInput): ItemDropResolution {
-	const minimumMinute = input.lane.openingMinute ?? 0;
-	const duration = Math.max(5, input.proposedEndMinute - input.proposedStartMinute);
-	const startMinute = Math.max(minimumMinute, Math.min(input.proposedStartMinute, DAY_END_MINUTE - duration));
-	const endMinute = startMinute + duration;
-	const placement = placementPatch(input.item, startMinute, endMinute);
-	const currentLaneItems = laneItems(input);
+	const laneItems = input.items.filter((candidate) => candidate.laneId === input.lane.id);
+	const selectedIds = new Set(input.selectedItemIds?.length ? input.selectedItemIds : [input.item.id]);
+	const selected = laneItems.filter((candidate) => selectedIds.has(candidate.id));
+	if (!selected.length) return { patches: [], hasConflict: false };
+	const endMinute = input.endMinute ?? DAY_END_MINUTE;
+	const delta = clampDelta(selected, input.proposedStartMinute - input.item.startMinute, input.lane, endMinute);
+	const patches = selected.map((item) => toPatch(item, item.startMinute + delta, item.endMinute + delta));
+	const unselected = laneItems.filter((candidate) => !selectedIds.has(candidate.id));
 
-	if (input.policy === 'free-booth' && input.lane.booths?.length) {
-		const targetBoothId = input.lane.booths.find((boothId) => {
-			const moved = { ...input.item, ...placement, boothId };
-			return !currentLaneItems.some(
-				(candidate) =>
-					candidate.id !== input.item.id && candidate.boothId === boothId && overlaps(moved, candidate)
-			);
-		});
-		if (targetBoothId) {
-			const patch = placementPatch(input.item, startMinute, endMinute, targetBoothId);
-			return { patches: [patch], hasConflict: false };
-		}
+	if (input.policy === 'free-booth' && selected.length === 1 && input.lane.booths?.length) {
+		const moved = applyPatches(selected[0] as ScheduleItem, patches);
+		const freeBooth = input.lane.booths.find((boothId) => !unselected.some((candidate) => candidate.boothId === boothId && overlaps(moved, candidate)));
+		if (freeBooth) return { patches: [toPatch(selected[0] as ScheduleItem, moved.startMinute, moved.endMinute, freeBooth)], hasConflict: false };
 	}
-
-	if (input.policy !== 'cascade') {
-		return {
-			patches: [placement],
-			hasConflict: conflictsFor(input.item, currentLaneItems, [placement])
-		};
-	}
-
-	const inSameBooth = currentLaneItems.filter(
-		(candidate) => candidate.id !== input.item.id && sameBooth(candidate, input.item)
-	);
-	const moving = { ...input.item, ...placement };
-	const shiftCandidates = inSameBooth.filter((candidate) =>
-		input.direction === 'down'
-			? candidate.startMinute >= input.item.startMinute
-			: candidate.endMinute <= input.item.endMinute
-	);
-	const initialOverlap = shiftCandidates.reduce((largest, candidate) => {
-		if (!overlaps(moving, candidate)) return largest;
-		return input.direction === 'down'
-			? Math.max(largest, moving.endMinute - candidate.startMinute)
-			: Math.max(largest, candidate.endMinute - moving.startMinute);
-	}, 0);
-
-	if (initialOverlap <= 0) {
-		return {
-			patches: [placement],
-			hasConflict: conflictsFor(input.item, currentLaneItems, [placement])
-		};
-	}
-
-	const shiftable = shiftCandidates.length
-		? input.direction === 'down'
-			? Math.max(0, DAY_END_MINUTE - Math.max(...shiftCandidates.map((candidate) => candidate.endMinute)))
-			: Math.max(
-				0,
-				Math.min(...shiftCandidates.map((candidate) => candidate.startMinute)) - minimumMinute
-			)
-		: 0;
-	const appliedShift = Math.min(initialOverlap, shiftable);
-	const signedShift = input.direction === 'down' ? appliedShift : -appliedShift;
-	const patches = [
-		placement,
-		...shiftCandidates.map((candidate) =>
-			placementPatch(
-				candidate,
-				candidate.startMinute + signedShift,
-				candidate.endMinute + signedShift
-			)
-		)
-	];
-
-	return {
-		patches,
-		hasConflict:
-			appliedShift < initialOverlap ||
-			conflictsFor(input.item, currentLaneItems, patches)
-	};
+	if (input.policy !== 'cascade') return { patches, hasConflict: conflicts(laneItems, patches) };
+	return resolveCascade(selected, unselected, patches, input.direction, input.lane, endMinute);
 }

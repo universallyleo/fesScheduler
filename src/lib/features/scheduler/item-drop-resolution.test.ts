@@ -74,7 +74,7 @@ describe('resolveItemDrop', () => {
 		expect(result.patches).toEqual([{ id: 'moving', startMinute: 610, endMinute: 630 }]);
 	});
 
-	it('pushes a later run down by the overlap amount', () => {
+	it('pushes only the later item reached by a downward overlap', () => {
 		const moving = item('moving', 600, 620);
 		const result = resolveItemDrop({
 			item: moving,
@@ -89,12 +89,11 @@ describe('resolveItemDrop', () => {
 		expect(result.hasConflict).toBe(false);
 		expect(result.patches).toEqual([
 			{ id: 'moving', startMinute: 610, endMinute: 630 },
-			{ id: 'later-one', startMinute: 630, endMinute: 650 },
-			{ id: 'later-two', startMinute: 670, endMinute: 690 }
+			{ id: 'later-one', startMinute: 630, endMinute: 650 }
 		]);
 	});
 
-	it('pushes an earlier run upward by the overlap amount', () => {
+	it('pushes only the earlier item reached by an upward overlap', () => {
 		const moving = item('moving', 640, 660);
 		const result = resolveItemDrop({
 			item: moving,
@@ -109,7 +108,6 @@ describe('resolveItemDrop', () => {
 		expect(result.hasConflict).toBe(false);
 		expect(result.patches).toEqual([
 			{ id: 'moving', startMinute: 610, endMinute: 630 },
-			{ id: 'earlier-one', startMinute: 560, endMinute: 580 },
 			{ id: 'earlier-two', startMinute: 590, endMinute: 610 }
 		]);
 	});
@@ -128,8 +126,7 @@ describe('resolveItemDrop', () => {
 
 		expect(result.hasConflict).toBe(true);
 		expect(result.patches).toEqual([
-			{ id: 'moving', startMinute: 1765, endMinute: 1785 },
-			{ id: 'later', startMinute: 1775, endMinute: 1800 }
+			{ id: 'moving', startMinute: 1765, endMinute: 1785 }
 		]);
 	});
 
@@ -148,8 +145,37 @@ describe('resolveItemDrop', () => {
 
 		expect(result.hasConflict).toBe(true);
 		expect(result.patches).toEqual([
-			{ id: 'moving', startMinute: 610, endMinute: 630 },
-			{ id: 'earlier', startMinute: 600, endMinute: 620 }
+			{ id: 'moving', startMinute: 610, endMinute: 630 }
+		]);
+	});
+
+	it('recomputes a downward cascade from baseline when a card moves back before the next item', () => {
+		const middle = item('B', 760, 790);
+		const next = item('C', 795, 825);
+		const movedDown = resolveItemDrop({
+			item: middle, items: [middle, next], lane, proposedStartMinute: 770, proposedEndMinute: 800,
+			direction: 'down', policy: 'cascade', endMinute: 1800
+		});
+		const movedBack = resolveItemDrop({
+			item: middle, items: [middle, next], lane, proposedStartMinute: 750, proposedEndMinute: 780,
+			direction: 'up', policy: 'cascade', endMinute: 1800
+		});
+
+		expect(movedDown.patches).toContainEqual({ id: 'C', startMinute: 800, endMinute: 830 });
+		expect(movedBack.patches).not.toContainEqual({ id: 'C', startMinute: 800, endMinute: 830 });
+	});
+
+	it('moves a selected group by one delta without changing booth assignments', () => {
+		const first = item('first', 600, 620, 'A');
+		const second = item('second', 630, 650, 'B');
+		const result = resolveItemDrop({
+			item: first, items: [first, second], lane, selectedItemIds: ['first', 'second'],
+			proposedStartMinute: 620, proposedEndMinute: 640, direction: 'down', policy: 'free-booth', endMinute: 1800
+		});
+
+		expect(result.patches).toEqual([
+			{ id: 'first', startMinute: 620, endMinute: 640 },
+			{ id: 'second', startMinute: 650, endMinute: 670 }
 		]);
 	});
 });
