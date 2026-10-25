@@ -1,0 +1,3157 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-10-25T16:26:59.791Z",
+  "festival": {
+    "id": "0a32b044-4898-4834-9bf9-b2e797c37a16",
+    "title": "SOUND GARDEN 2026（インポート）",
+    "timezone": "Asia/Tokyo",
+    "artistDirectory": [],
+    "days": [
+      {
+        "id": "sound-garden-2026-11-28-day-1",
+        "date": "2026-11-28",
+        "openingMinute": 540,
+        "displayStartMinute": 540,
+        "displayEndMinute": 1400,
+        "lanes": [
+          {
+            "id": "reny-limited",
+            "name": "ReNY limited",
+            "type": "stage",
+            "color": "#e29b4d",
+            "openingMinute": 660
+          },
+          {
+            "id": "reference-904",
+            "name": "リファレンス会議室 904",
+            "type": "tokuten",
+            "color": "#a8adb5",
+            "booths": [
+              "A",
+              "B"
+            ]
+          },
+          {
+            "id": "zephyr-hall",
+            "name": "Zephyr HALL",
+            "type": "stage",
+            "color": "#85bb78",
+            "openingMinute": 570
+          },
+          {
+            "id": "zephyr-inside",
+            "name": "Zephyr内",
+            "type": "tokuten",
+            "color": "#a8adb5",
+            "booths": [
+              "A",
+              "B",
+              "C"
+            ]
+          },
+          {
+            "id": "nakatou-marunouchi-2f",
+            "name": "ナカトウ丸の内ビル 2F",
+            "type": "tokuten",
+            "color": "#a8adb5",
+            "booths": [
+              "A",
+              "B"
+            ]
+          },
+          {
+            "id": "rad-hall",
+            "name": "RAD HALL",
+            "type": "stage",
+            "color": "#4f9fbe",
+            "openingMinute": 570
+          },
+          {
+            "id": "toys",
+            "name": "TOYS",
+            "type": "tokuten",
+            "color": "#a8adb5",
+            "booths": [
+              "A",
+              "B",
+              "RADHALL袖"
+            ]
+          },
+          {
+            "id": "diva",
+            "name": "DIVA",
+            "type": "stage",
+            "color": "#9b74aa",
+            "openingMinute": 570
+          },
+          {
+            "id": "diva-lobby",
+            "name": "DIVA ロビー",
+            "type": "tokuten",
+            "color": "#a8adb5"
+          },
+          {
+            "id": "lion-limited",
+            "name": "ライオンリミテッド",
+            "type": "tokuten",
+            "color": "#a8adb5",
+            "booths": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ]
+          },
+          {
+            "id": "deep-lobby",
+            "name": "DEEP ロビー",
+            "type": "tokuten",
+            "color": "#a8adb5"
+          },
+          {
+            "id": "deep",
+            "name": "DEEP",
+            "type": "stage",
+            "color": "#cc809a",
+            "openingMinute": 600
+          },
+          {
+            "id": "world-dream-stage",
+            "name": "WORLD DREAM STAGE",
+            "type": "stage",
+            "color": "#416aa9",
+            "openingMinute": 750
+          },
+          {
+            "id": "reference-908",
+            "name": "リファレンス会議室 908",
+            "type": "tokuten",
+            "color": "#a8adb5"
+          },
+          {
+            "id": "reference-905",
+            "name": "リファレンス会議室 905",
+            "type": "tokuten",
+            "color": "#a8adb5",
+            "booths": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ]
+          },
+          {
+            "id": "rad-nine",
+            "name": "RAD NINE",
+            "type": "stage",
+            "color": "#df5543",
+            "openingMinute": 600
+          },
+          {
+            "id": "rad-nine-entrance",
+            "name": "RAD NINE入口",
+            "type": "tokuten",
+            "color": "#a8adb5"
+          }
+        ],
+        "items": [
+          {
+            "id": "stage-1",
+            "laneId": "reny-limited",
+            "startMinute": 720,
+            "endMinute": 750,
+            "artistLabel": "lonlium",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-123"
+            ]
+          },
+          {
+            "id": "stage-2",
+            "laneId": "reny-limited",
+            "startMinute": 790,
+            "endMinute": 820,
+            "artistLabel": "Maison de Queen",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-124"
+            ]
+          },
+          {
+            "id": "stage-3",
+            "laneId": "reny-limited",
+            "startMinute": 840,
+            "endMinute": 870,
+            "artistLabel": "SITUASION",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-125"
+            ]
+          },
+          {
+            "id": "stage-4",
+            "laneId": "reny-limited",
+            "startMinute": 875,
+            "endMinute": 905,
+            "artistLabel": "YOLOZ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-126"
+            ]
+          },
+          {
+            "id": "stage-5",
+            "laneId": "reny-limited",
+            "startMinute": 910,
+            "endMinute": 940,
+            "artistLabel": "THE ORCHESTRA TOKYO",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-127"
+            ]
+          },
+          {
+            "id": "stage-6",
+            "laneId": "reny-limited",
+            "startMinute": 980,
+            "endMinute": 1010,
+            "artistLabel": "BACK-ON",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": []
+          },
+          {
+            "id": "stage-7",
+            "laneId": "reny-limited",
+            "startMinute": 1050,
+            "endMinute": 1080,
+            "artistLabel": "ジエメイ",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "tokuten-128"
+            ]
+          },
+          {
+            "id": "stage-8",
+            "laneId": "reny-limited",
+            "startMinute": 1120,
+            "endMinute": 1150,
+            "artistLabel": "ROOKiEZ is PUNK'D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-129"
+            ]
+          },
+          {
+            "id": "stage-9",
+            "laneId": "reny-limited",
+            "startMinute": 1190,
+            "endMinute": 1220,
+            "artistLabel": "INUWASI",
+            "artistEntityIds": [],
+            "favoriteLevel": 2,
+            "pairedTokutenItemIds": [
+              "tokuten-130"
+            ]
+          },
+          {
+            "id": "stage-10",
+            "laneId": "reny-limited",
+            "startMinute": 1260,
+            "endMinute": 1290,
+            "artistLabel": "FLOW",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": []
+          },
+          {
+            "id": "stage-11",
+            "laneId": "zephyr-hall",
+            "startMinute": 640,
+            "endMinute": 670,
+            "artistLabel": "XINXIN",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "tokuten-131"
+            ]
+          },
+          {
+            "id": "stage-12",
+            "laneId": "zephyr-hall",
+            "startMinute": 675,
+            "endMinute": 705,
+            "artistLabel": "LEIWAN",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-132"
+            ]
+          },
+          {
+            "id": "stage-13",
+            "laneId": "zephyr-hall",
+            "startMinute": 710,
+            "endMinute": 740,
+            "artistLabel": "Finally",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-133"
+            ]
+          },
+          {
+            "id": "stage-14",
+            "laneId": "zephyr-hall",
+            "startMinute": 745,
+            "endMinute": 775,
+            "artistLabel": "Axelight",
+            "artistEntityIds": [],
+            "favoriteLevel": 1,
+            "pairedTokutenItemIds": [
+              "tokuten-134"
+            ]
+          },
+          {
+            "id": "stage-15",
+            "laneId": "zephyr-hall",
+            "startMinute": 780,
+            "endMinute": 810,
+            "artistLabel": "UtaGe!",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-135"
+            ]
+          },
+          {
+            "id": "stage-16",
+            "laneId": "zephyr-hall",
+            "startMinute": 815,
+            "endMinute": 845,
+            "artistLabel": "手羽先センセーション",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-136"
+            ]
+          },
+          {
+            "id": "stage-17",
+            "laneId": "zephyr-hall",
+            "startMinute": 850,
+            "endMinute": 880,
+            "artistLabel": "君に、胸キュン。",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-137"
+            ]
+          },
+          {
+            "id": "stage-18",
+            "laneId": "zephyr-hall",
+            "startMinute": 885,
+            "endMinute": 915,
+            "artistLabel": "マザリ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-138"
+            ]
+          },
+          {
+            "id": "stage-19",
+            "laneId": "zephyr-hall",
+            "startMinute": 920,
+            "endMinute": 950,
+            "artistLabel": "Tohkei",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-139"
+            ]
+          },
+          {
+            "id": "stage-20",
+            "laneId": "zephyr-hall",
+            "startMinute": 955,
+            "endMinute": 985,
+            "artistLabel": "feelNEO",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-140"
+            ]
+          },
+          {
+            "id": "stage-21",
+            "laneId": "zephyr-hall",
+            "startMinute": 990,
+            "endMinute": 1020,
+            "artistLabel": "Ringwanderung",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-141"
+            ]
+          },
+          {
+            "id": "stage-22",
+            "laneId": "zephyr-hall",
+            "startMinute": 1025,
+            "endMinute": 1055,
+            "artistLabel": "豆柴の大群",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-142"
+            ]
+          },
+          {
+            "id": "stage-23",
+            "laneId": "zephyr-hall",
+            "startMinute": 1060,
+            "endMinute": 1090,
+            "artistLabel": "THE ENCORE",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-143"
+            ]
+          },
+          {
+            "id": "stage-24",
+            "laneId": "zephyr-hall",
+            "startMinute": 1095,
+            "endMinute": 1125,
+            "artistLabel": "Kolokol",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-228"
+            ]
+          },
+          {
+            "id": "stage-25",
+            "laneId": "zephyr-hall",
+            "startMinute": 1130,
+            "endMinute": 1160,
+            "artistLabel": "HIBANA",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "tokuten-228"
+            ]
+          },
+          {
+            "id": "stage-26",
+            "laneId": "zephyr-hall",
+            "startMinute": 1165,
+            "endMinute": 1195,
+            "artistLabel": "カラフルスクリーム",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-228"
+            ]
+          },
+          {
+            "id": "stage-27",
+            "laneId": "rad-hall",
+            "startMinute": 600,
+            "endMinute": 625,
+            "artistLabel": "HANIBANI",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-144"
+            ]
+          },
+          {
+            "id": "stage-28",
+            "laneId": "rad-hall",
+            "startMinute": 630,
+            "endMinute": 655,
+            "artistLabel": "あたまのなかは8ビット!?",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-145"
+            ]
+          },
+          {
+            "id": "stage-29",
+            "laneId": "rad-hall",
+            "startMinute": 660,
+            "endMinute": 685,
+            "artistLabel": "LUVRix",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-146"
+            ]
+          },
+          {
+            "id": "stage-30",
+            "laneId": "rad-hall",
+            "startMinute": 690,
+            "endMinute": 715,
+            "artistLabel": "SiLENT-NOiSE",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-147"
+            ]
+          },
+          {
+            "id": "stage-31",
+            "laneId": "rad-hall",
+            "startMinute": 720,
+            "endMinute": 745,
+            "artistLabel": "AdFicTioN",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-148"
+            ]
+          },
+          {
+            "id": "stage-32",
+            "laneId": "rad-hall",
+            "startMinute": 750,
+            "endMinute": 775,
+            "artistLabel": "シンダーエラ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-149"
+            ]
+          },
+          {
+            "id": "stage-33",
+            "laneId": "rad-hall",
+            "startMinute": 780,
+            "endMinute": 805,
+            "artistLabel": "ベンジャス!",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-150"
+            ]
+          },
+          {
+            "id": "stage-34",
+            "laneId": "rad-hall",
+            "startMinute": 810,
+            "endMinute": 835,
+            "artistLabel": "PLYDE",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-151"
+            ]
+          },
+          {
+            "id": "stage-35",
+            "laneId": "rad-hall",
+            "startMinute": 840,
+            "endMinute": 865,
+            "artistLabel": "Malcolm Mask McLaren",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-152"
+            ]
+          },
+          {
+            "id": "stage-36",
+            "laneId": "rad-hall",
+            "startMinute": 870,
+            "endMinute": 895,
+            "artistLabel": "NO♡AF",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-153"
+            ]
+          },
+          {
+            "id": "stage-37",
+            "laneId": "rad-hall",
+            "startMinute": 900,
+            "endMinute": 925,
+            "artistLabel": "SOMOSOMO",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-154"
+            ]
+          },
+          {
+            "id": "stage-38",
+            "laneId": "rad-hall",
+            "startMinute": 930,
+            "endMinute": 955,
+            "artistLabel": "カイジューバイミー",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-155"
+            ]
+          },
+          {
+            "id": "stage-39",
+            "laneId": "rad-hall",
+            "startMinute": 960,
+            "endMinute": 985,
+            "artistLabel": "Hello Youth",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-156"
+            ]
+          },
+          {
+            "id": "stage-40",
+            "laneId": "rad-hall",
+            "startMinute": 990,
+            "endMinute": 1015,
+            "artistLabel": "ウイバナ webana.",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-157"
+            ]
+          },
+          {
+            "id": "stage-41",
+            "laneId": "rad-hall",
+            "startMinute": 1020,
+            "endMinute": 1045,
+            "artistLabel": "BLUEGOATS",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-158"
+            ]
+          },
+          {
+            "id": "stage-42",
+            "laneId": "rad-hall",
+            "startMinute": 1050,
+            "endMinute": 1075,
+            "artistLabel": "点染テンセイ少女。",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-159"
+            ]
+          },
+          {
+            "id": "stage-43",
+            "laneId": "rad-hall",
+            "startMinute": 1080,
+            "endMinute": 1105,
+            "artistLabel": "amini",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-160"
+            ]
+          },
+          {
+            "id": "stage-44",
+            "laneId": "rad-hall",
+            "startMinute": 1110,
+            "endMinute": 1135,
+            "artistLabel": "STARRY×NIGHT↗",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-161"
+            ]
+          },
+          {
+            "id": "stage-45",
+            "laneId": "rad-hall",
+            "startMinute": 1140,
+            "endMinute": 1165,
+            "artistLabel": "Chalca",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-162"
+            ]
+          },
+          {
+            "id": "stage-46",
+            "laneId": "rad-hall",
+            "startMinute": 1170,
+            "endMinute": 1195,
+            "artistLabel": "YVKiN",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-163"
+            ]
+          },
+          {
+            "id": "stage-47",
+            "laneId": "rad-hall",
+            "startMinute": 1200,
+            "endMinute": 1225,
+            "artistLabel": "Mirror,Mirror",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-164"
+            ]
+          },
+          {
+            "id": "stage-48",
+            "laneId": "rad-hall",
+            "startMinute": 1230,
+            "endMinute": 1255,
+            "artistLabel": "Cosmoslay",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-229"
+            ]
+          },
+          {
+            "id": "stage-49",
+            "laneId": "rad-hall",
+            "startMinute": 1260,
+            "endMinute": 1285,
+            "artistLabel": "AIBECK",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-229"
+            ]
+          },
+          {
+            "id": "stage-50",
+            "laneId": "rad-hall",
+            "startMinute": 1295,
+            "endMinute": 1320,
+            "artistLabel": "MAZE",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-229"
+            ]
+          },
+          {
+            "id": "stage-51",
+            "laneId": "diva",
+            "startMinute": 600,
+            "endMinute": 625,
+            "artistLabel": "GLIM of GRAND",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-165"
+            ]
+          },
+          {
+            "id": "stage-52",
+            "laneId": "diva",
+            "startMinute": 630,
+            "endMinute": 655,
+            "artistLabel": "ENVY PARANOID",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-166"
+            ]
+          },
+          {
+            "id": "stage-53",
+            "laneId": "diva",
+            "startMinute": 660,
+            "endMinute": 685,
+            "artistLabel": "OROCHI",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-167"
+            ]
+          },
+          {
+            "id": "stage-54",
+            "laneId": "diva",
+            "startMinute": 690,
+            "endMinute": 715,
+            "artistLabel": "Payrin's",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-168"
+            ]
+          },
+          {
+            "id": "stage-55",
+            "laneId": "diva",
+            "startMinute": 720,
+            "endMinute": 745,
+            "artistLabel": "Baby Quatz",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-169"
+            ]
+          },
+          {
+            "id": "stage-56",
+            "laneId": "diva",
+            "startMinute": 750,
+            "endMinute": 775,
+            "artistLabel": "RED-i",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-170"
+            ]
+          },
+          {
+            "id": "stage-57",
+            "laneId": "diva",
+            "startMinute": 780,
+            "endMinute": 805,
+            "artistLabel": "AFTERS",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-171"
+            ]
+          },
+          {
+            "id": "stage-58",
+            "laneId": "diva",
+            "startMinute": 810,
+            "endMinute": 835,
+            "artistLabel": "キュニユ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-172"
+            ]
+          },
+          {
+            "id": "stage-59",
+            "laneId": "diva",
+            "startMinute": 840,
+            "endMinute": 865,
+            "artistLabel": "LØISLOID",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-173"
+            ]
+          },
+          {
+            "id": "stage-60",
+            "laneId": "diva",
+            "startMinute": 870,
+            "endMinute": 895,
+            "artistLabel": "AIWO",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-174"
+            ]
+          },
+          {
+            "id": "stage-61",
+            "laneId": "diva",
+            "startMinute": 900,
+            "endMinute": 925,
+            "artistLabel": "Merry Mellow",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-175"
+            ]
+          },
+          {
+            "id": "stage-62",
+            "laneId": "diva",
+            "startMinute": 930,
+            "endMinute": 955,
+            "artistLabel": "SWANTICK",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-176"
+            ]
+          },
+          {
+            "id": "stage-63",
+            "laneId": "diva",
+            "startMinute": 960,
+            "endMinute": 985,
+            "artistLabel": "白黒アリス",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-177"
+            ]
+          },
+          {
+            "id": "stage-64",
+            "laneId": "diva",
+            "startMinute": 990,
+            "endMinute": 1015,
+            "artistLabel": "XILUX",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-178"
+            ]
+          },
+          {
+            "id": "stage-65",
+            "laneId": "diva",
+            "startMinute": 1020,
+            "endMinute": 1045,
+            "artistLabel": "アクリム",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-179"
+            ]
+          },
+          {
+            "id": "stage-66",
+            "laneId": "diva",
+            "startMinute": 1050,
+            "endMinute": 1075,
+            "artistLabel": "Excite One Self",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-180"
+            ]
+          },
+          {
+            "id": "stage-67",
+            "laneId": "diva",
+            "startMinute": 1080,
+            "endMinute": 1105,
+            "artistLabel": "HATENO",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-181"
+            ]
+          },
+          {
+            "id": "stage-68",
+            "laneId": "diva",
+            "startMinute": 1110,
+            "endMinute": 1135,
+            "artistLabel": ".LiNIXLiNE.",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-182"
+            ]
+          },
+          {
+            "id": "stage-69",
+            "laneId": "diva",
+            "startMinute": 1140,
+            "endMinute": 1165,
+            "artistLabel": "9DayzGlitchClubTokyo",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-183"
+            ]
+          },
+          {
+            "id": "stage-70",
+            "laneId": "diva",
+            "startMinute": 1170,
+            "endMinute": 1195,
+            "artistLabel": "丑03-USHIMITSU-",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-230"
+            ]
+          },
+          {
+            "id": "stage-71",
+            "laneId": "diva",
+            "startMinute": 1200,
+            "endMinute": 1225,
+            "artistLabel": "acro-A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-230"
+            ]
+          },
+          {
+            "id": "stage-72",
+            "laneId": "diva",
+            "startMinute": 1230,
+            "endMinute": 1255,
+            "artistLabel": "CYCLONISTA",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-230"
+            ]
+          },
+          {
+            "id": "stage-73",
+            "laneId": "deep",
+            "startMinute": 615,
+            "endMinute": 640,
+            "artistLabel": "MeltiQ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-184"
+            ]
+          },
+          {
+            "id": "stage-74",
+            "laneId": "deep",
+            "startMinute": 645,
+            "endMinute": 670,
+            "artistLabel": "妖狐繚乱",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-185"
+            ]
+          },
+          {
+            "id": "stage-75",
+            "laneId": "deep",
+            "startMinute": 675,
+            "endMinute": 700,
+            "artistLabel": "GigiL",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-186"
+            ]
+          },
+          {
+            "id": "stage-76",
+            "laneId": "deep",
+            "startMinute": 705,
+            "endMinute": 730,
+            "artistLabel": "Re:bellious",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-187"
+            ]
+          },
+          {
+            "id": "stage-77",
+            "laneId": "deep",
+            "startMinute": 735,
+            "endMinute": 760,
+            "artistLabel": "CØCØRIZE",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-188"
+            ]
+          },
+          {
+            "id": "stage-78",
+            "laneId": "deep",
+            "startMinute": 765,
+            "endMinute": 790,
+            "artistLabel": "究極人形",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-189"
+            ]
+          },
+          {
+            "id": "stage-79",
+            "laneId": "deep",
+            "startMinute": 795,
+            "endMinute": 820,
+            "artistLabel": "神薙-時うさぎ-",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-190"
+            ]
+          },
+          {
+            "id": "stage-80",
+            "laneId": "deep",
+            "startMinute": 825,
+            "endMinute": 850,
+            "artistLabel": "éclatcia",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-191"
+            ]
+          },
+          {
+            "id": "stage-81",
+            "laneId": "deep",
+            "startMinute": 855,
+            "endMinute": 880,
+            "artistLabel": "ELEVYZ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-192"
+            ]
+          },
+          {
+            "id": "stage-82",
+            "laneId": "deep",
+            "startMinute": 885,
+            "endMinute": 910,
+            "artistLabel": "#ジューロック",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-193"
+            ]
+          },
+          {
+            "id": "stage-83",
+            "laneId": "deep",
+            "startMinute": 915,
+            "endMinute": 940,
+            "artistLabel": "ミライス",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-194"
+            ]
+          },
+          {
+            "id": "stage-84",
+            "laneId": "deep",
+            "startMinute": 945,
+            "endMinute": 970,
+            "artistLabel": "Twilight BlooM.",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-195"
+            ]
+          },
+          {
+            "id": "stage-85",
+            "laneId": "deep",
+            "startMinute": 975,
+            "endMinute": 1000,
+            "artistLabel": "トウトイナ。",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-196",
+              "tokuten-231"
+            ]
+          },
+          {
+            "id": "stage-86",
+            "laneId": "deep",
+            "startMinute": 1005,
+            "endMinute": 1030,
+            "artistLabel": "OS☆U",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-197",
+              "tokuten-231"
+            ]
+          },
+          {
+            "id": "stage-87",
+            "laneId": "world-dream-stage",
+            "startMinute": 780,
+            "endMinute": 805,
+            "artistLabel": "ミラクルファンファーレ！",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-198"
+            ]
+          },
+          {
+            "id": "stage-88",
+            "laneId": "world-dream-stage",
+            "startMinute": 810,
+            "endMinute": 835,
+            "artistLabel": "脳内パステル",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-199"
+            ]
+          },
+          {
+            "id": "stage-89",
+            "laneId": "world-dream-stage",
+            "startMinute": 840,
+            "endMinute": 865,
+            "artistLabel": "Lollipop♡CHU",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-200"
+            ]
+          },
+          {
+            "id": "stage-90",
+            "laneId": "world-dream-stage",
+            "startMinute": 870,
+            "endMinute": 895,
+            "artistLabel": "himawari（船橋）",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-201"
+            ]
+          },
+          {
+            "id": "stage-91",
+            "laneId": "world-dream-stage",
+            "startMinute": 900,
+            "endMinute": 925,
+            "artistLabel": "逆転ねこぱんちっ！",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-202"
+            ]
+          },
+          {
+            "id": "stage-92",
+            "laneId": "world-dream-stage",
+            "startMinute": 930,
+            "endMinute": 955,
+            "artistLabel": "COLOR of COLOR",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-203"
+            ]
+          },
+          {
+            "id": "stage-93",
+            "laneId": "world-dream-stage",
+            "startMinute": 960,
+            "endMinute": 985,
+            "artistLabel": "image",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-204"
+            ]
+          },
+          {
+            "id": "stage-94",
+            "laneId": "world-dream-stage",
+            "startMinute": 990,
+            "endMinute": 1015,
+            "artistLabel": "Cherie!",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-205"
+            ]
+          },
+          {
+            "id": "stage-95",
+            "laneId": "world-dream-stage",
+            "startMinute": 1020,
+            "endMinute": 1045,
+            "artistLabel": "W.ダブルヴィー",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-206"
+            ]
+          },
+          {
+            "id": "stage-96",
+            "laneId": "world-dream-stage",
+            "startMinute": 1050,
+            "endMinute": 1075,
+            "artistLabel": "シャニムニ＝パレード",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-207"
+            ]
+          },
+          {
+            "id": "stage-97",
+            "laneId": "world-dream-stage",
+            "startMinute": 1080,
+            "endMinute": 1105,
+            "artistLabel": "まねきケチャ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": []
+          },
+          {
+            "id": "stage-98",
+            "laneId": "world-dream-stage",
+            "startMinute": 1110,
+            "endMinute": 1135,
+            "artistLabel": "スーパーベイビーズ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-232"
+            ]
+          },
+          {
+            "id": "stage-99",
+            "laneId": "world-dream-stage",
+            "startMinute": 1140,
+            "endMinute": 1165,
+            "artistLabel": "サクヤコノハナ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-232"
+            ]
+          },
+          {
+            "id": "stage-100",
+            "laneId": "world-dream-stage",
+            "startMinute": 1170,
+            "endMinute": 1195,
+            "artistLabel": "アイドルカレッジ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-232"
+            ]
+          },
+          {
+            "id": "stage-101",
+            "laneId": "rad-nine",
+            "startMinute": 620,
+            "endMinute": 645,
+            "artistLabel": "フェノメナ",
+            "artistEntityIds": [],
+            "favoriteLevel": 2,
+            "pairedTokutenItemIds": [
+              "tokuten-208"
+            ]
+          },
+          {
+            "id": "stage-102",
+            "laneId": "rad-nine",
+            "startMinute": 650,
+            "endMinute": 675,
+            "artistLabel": "GANGDEMIC",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-209"
+            ]
+          },
+          {
+            "id": "stage-103",
+            "laneId": "rad-nine",
+            "startMinute": 680,
+            "endMinute": 705,
+            "artistLabel": "Misology",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-210"
+            ]
+          },
+          {
+            "id": "stage-104",
+            "laneId": "rad-nine",
+            "startMinute": 710,
+            "endMinute": 735,
+            "artistLabel": "ACEQUAD",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-211"
+            ]
+          },
+          {
+            "id": "stage-105",
+            "laneId": "rad-nine",
+            "startMinute": 740,
+            "endMinute": 765,
+            "artistLabel": "めっ！",
+            "artistEntityIds": [],
+            "favoriteLevel": 2,
+            "pairedTokutenItemIds": [
+              "tokuten-212"
+            ]
+          },
+          {
+            "id": "stage-106",
+            "laneId": "rad-nine",
+            "startMinute": 770,
+            "endMinute": 795,
+            "artistLabel": "MAGMAZ",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "tokuten-213"
+            ]
+          },
+          {
+            "id": "stage-107",
+            "laneId": "rad-nine",
+            "startMinute": 800,
+            "endMinute": 825,
+            "artistLabel": "zanka",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "tokuten-214"
+            ]
+          },
+          {
+            "id": "stage-108",
+            "laneId": "rad-nine",
+            "startMinute": 830,
+            "endMinute": 855,
+            "artistLabel": "RePLAY",
+            "artistEntityIds": [],
+            "favoriteLevel": 2,
+            "pairedTokutenItemIds": [
+              "tokuten-215"
+            ]
+          },
+          {
+            "id": "stage-109",
+            "laneId": "rad-nine",
+            "startMinute": 860,
+            "endMinute": 885,
+            "artistLabel": "AZ-ON",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "tokuten-216"
+            ]
+          },
+          {
+            "id": "stage-110",
+            "laneId": "rad-nine",
+            "startMinute": 890,
+            "endMinute": 915,
+            "artistLabel": "EMPATHY",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-217"
+            ]
+          },
+          {
+            "id": "stage-111",
+            "laneId": "rad-nine",
+            "startMinute": 920,
+            "endMinute": 945,
+            "artistLabel": "JINKS",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-218"
+            ]
+          },
+          {
+            "id": "stage-112",
+            "laneId": "rad-nine",
+            "startMinute": 950,
+            "endMinute": 975,
+            "artistLabel": "名称非公開",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-219"
+            ]
+          },
+          {
+            "id": "stage-113",
+            "laneId": "rad-nine",
+            "startMinute": 980,
+            "endMinute": 1005,
+            "artistLabel": "ANNYX",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-220"
+            ]
+          },
+          {
+            "id": "stage-114",
+            "laneId": "rad-nine",
+            "startMinute": 1010,
+            "endMinute": 1035,
+            "artistLabel": "鳴ル神",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-221"
+            ]
+          },
+          {
+            "id": "stage-115",
+            "laneId": "rad-nine",
+            "startMinute": 1040,
+            "endMinute": 1065,
+            "artistLabel": "じゅじゅ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-222"
+            ]
+          },
+          {
+            "id": "stage-116",
+            "laneId": "rad-nine",
+            "startMinute": 1070,
+            "endMinute": 1095,
+            "artistLabel": "絶望キネマ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-223"
+            ]
+          },
+          {
+            "id": "stage-117",
+            "laneId": "rad-nine",
+            "startMinute": 1100,
+            "endMinute": 1125,
+            "artistLabel": "スパンコールグッドタイムズ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-224"
+            ]
+          },
+          {
+            "id": "stage-118",
+            "laneId": "rad-nine",
+            "startMinute": 1130,
+            "endMinute": 1155,
+            "artistLabel": "MAGICAL SPEC",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-225"
+            ]
+          },
+          {
+            "id": "stage-119",
+            "laneId": "rad-nine",
+            "startMinute": 1160,
+            "endMinute": 1185,
+            "artistLabel": "ラナキュラ",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-226"
+            ]
+          },
+          {
+            "id": "stage-120",
+            "laneId": "rad-nine",
+            "startMinute": 1190,
+            "endMinute": 1215,
+            "artistLabel": "ぜろから☆すた→と",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-227",
+              "tokuten-233"
+            ]
+          },
+          {
+            "id": "stage-121",
+            "laneId": "rad-nine",
+            "startMinute": 1220,
+            "endMinute": 1245,
+            "artistLabel": "buGG",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-233"
+            ]
+          },
+          {
+            "id": "stage-122",
+            "laneId": "rad-nine",
+            "startMinute": 1250,
+            "endMinute": 1275,
+            "artistLabel": "AQA",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "tokuten-233"
+            ]
+          },
+          {
+            "id": "tokuten-123",
+            "laneId": "reference-904",
+            "startMinute": 780,
+            "endMinute": 900,
+            "artistLabel": "lonlium",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-1"
+            ]
+          },
+          {
+            "id": "tokuten-124",
+            "laneId": "reference-904",
+            "startMinute": 850,
+            "endMinute": 970,
+            "artistLabel": "Maison de Queen",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-2"
+            ]
+          },
+          {
+            "id": "tokuten-125",
+            "laneId": "reference-905",
+            "startMinute": 900,
+            "endMinute": 1020,
+            "artistLabel": "SITUASION",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-3"
+            ]
+          },
+          {
+            "id": "tokuten-126",
+            "laneId": "reference-905",
+            "startMinute": 935,
+            "endMinute": 1055,
+            "artistLabel": "YOLOZ",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-4"
+            ]
+          },
+          {
+            "id": "tokuten-127",
+            "laneId": "reference-904",
+            "startMinute": 950,
+            "endMinute": 1090,
+            "artistLabel": "THE ORCHESTRA TOKYO",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-5"
+            ]
+          },
+          {
+            "id": "tokuten-128",
+            "laneId": "reference-904",
+            "startMinute": 1110,
+            "endMinute": 1230,
+            "artistLabel": "ジエメイ",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-7"
+            ]
+          },
+          {
+            "id": "tokuten-130",
+            "laneId": "reference-904",
+            "startMinute": 990,
+            "endMinute": 1170,
+            "artistLabel": "INUWASI",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-9"
+            ]
+          },
+          {
+            "id": "tokuten-131",
+            "laneId": "zephyr-inside",
+            "startMinute": 685,
+            "endMinute": 805,
+            "artistLabel": "XINXIN",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "stage-11"
+            ]
+          },
+          {
+            "id": "tokuten-132",
+            "laneId": "zephyr-inside",
+            "startMinute": 720,
+            "endMinute": 840,
+            "artistLabel": "LEIWAN",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-12"
+            ]
+          },
+          {
+            "id": "tokuten-133",
+            "laneId": "nakatou-marunouchi-2f",
+            "startMinute": 770,
+            "endMinute": 890,
+            "artistLabel": "Finally",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-13"
+            ]
+          },
+          {
+            "id": "tokuten-134",
+            "laneId": "nakatou-marunouchi-2f",
+            "startMinute": 805,
+            "endMinute": 925,
+            "artistLabel": "Axelight",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-14"
+            ]
+          },
+          {
+            "id": "tokuten-135",
+            "laneId": "zephyr-inside",
+            "startMinute": 825,
+            "endMinute": 945,
+            "artistLabel": "UtaGe!",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-15"
+            ]
+          },
+          {
+            "id": "tokuten-136",
+            "laneId": "zephyr-inside",
+            "startMinute": 860,
+            "endMinute": 980,
+            "artistLabel": "手羽先センセーション",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-16"
+            ]
+          },
+          {
+            "id": "tokuten-137",
+            "laneId": "nakatou-marunouchi-2f",
+            "startMinute": 910,
+            "endMinute": 1030,
+            "artistLabel": "君に、胸キュン。",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-17"
+            ]
+          },
+          {
+            "id": "tokuten-138",
+            "laneId": "nakatou-marunouchi-2f",
+            "startMinute": 945,
+            "endMinute": 1065,
+            "artistLabel": "マザリ",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-18"
+            ]
+          },
+          {
+            "id": "tokuten-139",
+            "laneId": "zephyr-inside",
+            "startMinute": 965,
+            "endMinute": 1085,
+            "artistLabel": "Tohkei",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-19"
+            ]
+          },
+          {
+            "id": "tokuten-140",
+            "laneId": "zephyr-inside",
+            "startMinute": 1000,
+            "endMinute": 1120,
+            "artistLabel": "feelNEO",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-20"
+            ]
+          },
+          {
+            "id": "tokuten-141",
+            "laneId": "nakatou-marunouchi-2f",
+            "startMinute": 1050,
+            "endMinute": 1170,
+            "artistLabel": "Ringwanderung",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-21"
+            ]
+          },
+          {
+            "id": "tokuten-142",
+            "laneId": "zephyr-inside",
+            "startMinute": 1085,
+            "endMinute": 1205,
+            "artistLabel": "豆柴の大群",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-22"
+            ]
+          },
+          {
+            "id": "tokuten-143",
+            "laneId": "zephyr-inside",
+            "startMinute": 1105,
+            "endMinute": 1225,
+            "artistLabel": "THE ENCORE",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-23"
+            ]
+          },
+          {
+            "id": "tokuten-144",
+            "laneId": "toys",
+            "startMinute": 640,
+            "endMinute": 710,
+            "artistLabel": "HANIBANI",
+            "itemType": "tokuten",
+            "boothId": "RADHALL袖",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-27"
+            ]
+          },
+          {
+            "id": "tokuten-145",
+            "laneId": "toys",
+            "startMinute": 670,
+            "endMinute": 740,
+            "artistLabel": "あたまのなかは8ビット!?",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-28"
+            ]
+          },
+          {
+            "id": "tokuten-146",
+            "laneId": "toys",
+            "startMinute": 700,
+            "endMinute": 770,
+            "artistLabel": "LUVRix",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-29"
+            ]
+          },
+          {
+            "id": "tokuten-147",
+            "laneId": "toys",
+            "startMinute": 730,
+            "endMinute": 800,
+            "artistLabel": "SiLENT-NOiSE",
+            "itemType": "tokuten",
+            "boothId": "RADHALL袖",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-30"
+            ]
+          },
+          {
+            "id": "tokuten-148",
+            "laneId": "toys",
+            "startMinute": 760,
+            "endMinute": 830,
+            "artistLabel": "AdFicTioN",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-31"
+            ]
+          },
+          {
+            "id": "tokuten-149",
+            "laneId": "toys",
+            "startMinute": 790,
+            "endMinute": 860,
+            "artistLabel": "シンダーエラ",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-32"
+            ]
+          },
+          {
+            "id": "tokuten-150",
+            "laneId": "toys",
+            "startMinute": 820,
+            "endMinute": 890,
+            "artistLabel": "ベンジャス!",
+            "itemType": "tokuten",
+            "boothId": "RADHALL袖",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-33"
+            ]
+          },
+          {
+            "id": "tokuten-151",
+            "laneId": "toys",
+            "startMinute": 850,
+            "endMinute": 920,
+            "artistLabel": "PLYDE",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-34"
+            ]
+          },
+          {
+            "id": "tokuten-152",
+            "laneId": "toys",
+            "startMinute": 880,
+            "endMinute": 950,
+            "artistLabel": "Malcolm Mask McLaren",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-35"
+            ]
+          },
+          {
+            "id": "tokuten-153",
+            "laneId": "toys",
+            "startMinute": 910,
+            "endMinute": 980,
+            "artistLabel": "NO♡AF",
+            "itemType": "tokuten",
+            "boothId": "RADHALL袖",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-36"
+            ]
+          },
+          {
+            "id": "tokuten-154",
+            "laneId": "toys",
+            "startMinute": 940,
+            "endMinute": 1010,
+            "artistLabel": "SOMOSOMO",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-37"
+            ]
+          },
+          {
+            "id": "tokuten-155",
+            "laneId": "toys",
+            "startMinute": 970,
+            "endMinute": 1040,
+            "artistLabel": "カイジューバイミー",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-38"
+            ]
+          },
+          {
+            "id": "tokuten-156",
+            "laneId": "toys",
+            "startMinute": 1000,
+            "endMinute": 1070,
+            "artistLabel": "Hello Youth",
+            "itemType": "tokuten",
+            "boothId": "RADHALL袖",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-39"
+            ]
+          },
+          {
+            "id": "tokuten-157",
+            "laneId": "toys",
+            "startMinute": 1030,
+            "endMinute": 1100,
+            "artistLabel": "ウイバナ webana.",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-40"
+            ]
+          },
+          {
+            "id": "tokuten-158",
+            "laneId": "toys",
+            "startMinute": 1060,
+            "endMinute": 1130,
+            "artistLabel": "BLUEGOATS",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-41"
+            ]
+          },
+          {
+            "id": "tokuten-159",
+            "laneId": "toys",
+            "startMinute": 1090,
+            "endMinute": 1160,
+            "artistLabel": "点染テンセイ少女。",
+            "itemType": "tokuten",
+            "boothId": "RADHALL袖",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-42"
+            ]
+          },
+          {
+            "id": "tokuten-160",
+            "laneId": "toys",
+            "startMinute": 1120,
+            "endMinute": 1190,
+            "artistLabel": "amini",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-43"
+            ]
+          },
+          {
+            "id": "tokuten-161",
+            "laneId": "toys",
+            "startMinute": 1150,
+            "endMinute": 1220,
+            "artistLabel": "STARRY×NIGHT↗",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-44"
+            ]
+          },
+          {
+            "id": "tokuten-162",
+            "laneId": "toys",
+            "startMinute": 1180,
+            "endMinute": 1250,
+            "artistLabel": "Chalca",
+            "itemType": "tokuten",
+            "boothId": "RADHALL袖",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-45"
+            ]
+          },
+          {
+            "id": "tokuten-163",
+            "laneId": "toys",
+            "startMinute": 1210,
+            "endMinute": 1280,
+            "artistLabel": "YVKiN",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-46"
+            ]
+          },
+          {
+            "id": "tokuten-164",
+            "laneId": "toys",
+            "startMinute": 1240,
+            "endMinute": 1310,
+            "artistLabel": "Mirror,Mirror",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-47"
+            ]
+          },
+          {
+            "id": "tokuten-165",
+            "laneId": "diva-lobby",
+            "startMinute": 640,
+            "endMinute": 710,
+            "artistLabel": "GLIM of GRAND",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-51"
+            ]
+          },
+          {
+            "id": "tokuten-166",
+            "laneId": "lion-limited",
+            "startMinute": 675,
+            "endMinute": 745,
+            "artistLabel": "ENVY PARANOID",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-52"
+            ]
+          },
+          {
+            "id": "tokuten-167",
+            "laneId": "lion-limited",
+            "startMinute": 705,
+            "endMinute": 775,
+            "artistLabel": "OROCHI",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-53"
+            ]
+          },
+          {
+            "id": "tokuten-168",
+            "laneId": "diva-lobby",
+            "startMinute": 730,
+            "endMinute": 800,
+            "artistLabel": "Payrin's",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-54"
+            ]
+          },
+          {
+            "id": "tokuten-169",
+            "laneId": "lion-limited",
+            "startMinute": 765,
+            "endMinute": 835,
+            "artistLabel": "Baby Quatz",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-55"
+            ]
+          },
+          {
+            "id": "tokuten-170",
+            "laneId": "lion-limited",
+            "startMinute": 795,
+            "endMinute": 865,
+            "artistLabel": "RED-i",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-56"
+            ]
+          },
+          {
+            "id": "tokuten-171",
+            "laneId": "diva-lobby",
+            "startMinute": 820,
+            "endMinute": 890,
+            "artistLabel": "AFTERS",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-57"
+            ]
+          },
+          {
+            "id": "tokuten-172",
+            "laneId": "lion-limited",
+            "startMinute": 855,
+            "endMinute": 925,
+            "artistLabel": "キュニユ",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-58"
+            ]
+          },
+          {
+            "id": "tokuten-173",
+            "laneId": "lion-limited",
+            "startMinute": 885,
+            "endMinute": 955,
+            "artistLabel": "LØISLOID",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-59"
+            ]
+          },
+          {
+            "id": "tokuten-174",
+            "laneId": "diva-lobby",
+            "startMinute": 910,
+            "endMinute": 980,
+            "artistLabel": "AIWO",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-60"
+            ]
+          },
+          {
+            "id": "tokuten-175",
+            "laneId": "lion-limited",
+            "startMinute": 945,
+            "endMinute": 1015,
+            "artistLabel": "Merry Mellow",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-61"
+            ]
+          },
+          {
+            "id": "tokuten-176",
+            "laneId": "lion-limited",
+            "startMinute": 975,
+            "endMinute": 1045,
+            "artistLabel": "SWANTICK",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-62"
+            ]
+          },
+          {
+            "id": "tokuten-177",
+            "laneId": "diva-lobby",
+            "startMinute": 1000,
+            "endMinute": 1070,
+            "artistLabel": "白黒アリス",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-63"
+            ]
+          },
+          {
+            "id": "tokuten-178",
+            "laneId": "lion-limited",
+            "startMinute": 1035,
+            "endMinute": 1105,
+            "artistLabel": "XILUX",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-64"
+            ]
+          },
+          {
+            "id": "tokuten-179",
+            "laneId": "lion-limited",
+            "startMinute": 1065,
+            "endMinute": 1135,
+            "artistLabel": "アクリム",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-65"
+            ]
+          },
+          {
+            "id": "tokuten-180",
+            "laneId": "diva-lobby",
+            "startMinute": 1090,
+            "endMinute": 1160,
+            "artistLabel": "Excite One Self",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-66"
+            ]
+          },
+          {
+            "id": "tokuten-181",
+            "laneId": "lion-limited",
+            "startMinute": 1125,
+            "endMinute": 1195,
+            "artistLabel": "HATENO",
+            "itemType": "tokuten",
+            "boothId": "A",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-67"
+            ]
+          },
+          {
+            "id": "tokuten-182",
+            "laneId": "lion-limited",
+            "startMinute": 1155,
+            "endMinute": 1225,
+            "artistLabel": ".LiNIXLiNE.",
+            "itemType": "tokuten",
+            "boothId": "B",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-68"
+            ]
+          },
+          {
+            "id": "tokuten-183",
+            "laneId": "diva-lobby",
+            "startMinute": 1180,
+            "endMinute": 1250,
+            "artistLabel": "9DayzGlitchClubTokyo",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-69"
+            ]
+          },
+          {
+            "id": "tokuten-184",
+            "laneId": "deep-lobby",
+            "startMinute": 655,
+            "endMinute": 725,
+            "artistLabel": "MeltiQ",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-73"
+            ]
+          },
+          {
+            "id": "tokuten-185",
+            "laneId": "lion-limited",
+            "startMinute": 690,
+            "endMinute": 760,
+            "artistLabel": "妖狐繚乱",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-74"
+            ]
+          },
+          {
+            "id": "tokuten-186",
+            "laneId": "lion-limited",
+            "startMinute": 720,
+            "endMinute": 790,
+            "artistLabel": "GigiL",
+            "itemType": "tokuten",
+            "boothId": "D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-75"
+            ]
+          },
+          {
+            "id": "tokuten-187",
+            "laneId": "deep-lobby",
+            "startMinute": 745,
+            "endMinute": 815,
+            "artistLabel": "Re:bellious",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-76"
+            ]
+          },
+          {
+            "id": "tokuten-188",
+            "laneId": "lion-limited",
+            "startMinute": 780,
+            "endMinute": 850,
+            "artistLabel": "CØCØRIZE",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-77"
+            ]
+          },
+          {
+            "id": "tokuten-189",
+            "laneId": "lion-limited",
+            "startMinute": 810,
+            "endMinute": 880,
+            "artistLabel": "究極人形",
+            "itemType": "tokuten",
+            "boothId": "D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-78"
+            ]
+          },
+          {
+            "id": "tokuten-190",
+            "laneId": "deep-lobby",
+            "startMinute": 835,
+            "endMinute": 905,
+            "artistLabel": "神薙-時うさぎ-",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-79"
+            ]
+          },
+          {
+            "id": "tokuten-191",
+            "laneId": "lion-limited",
+            "startMinute": 870,
+            "endMinute": 940,
+            "artistLabel": "éclatcia",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-80"
+            ]
+          },
+          {
+            "id": "tokuten-192",
+            "laneId": "lion-limited",
+            "startMinute": 900,
+            "endMinute": 970,
+            "artistLabel": "ELEVYZ",
+            "itemType": "tokuten",
+            "boothId": "D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-81"
+            ]
+          },
+          {
+            "id": "tokuten-193",
+            "laneId": "deep-lobby",
+            "startMinute": 925,
+            "endMinute": 995,
+            "artistLabel": "#ジューロック",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-82"
+            ]
+          },
+          {
+            "id": "tokuten-194",
+            "laneId": "lion-limited",
+            "startMinute": 960,
+            "endMinute": 1030,
+            "artistLabel": "ミライス",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-83"
+            ]
+          },
+          {
+            "id": "tokuten-195",
+            "laneId": "lion-limited",
+            "startMinute": 990,
+            "endMinute": 1060,
+            "artistLabel": "Twilight BlooM.",
+            "itemType": "tokuten",
+            "boothId": "D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-84"
+            ]
+          },
+          {
+            "id": "tokuten-198",
+            "laneId": "reference-908",
+            "startMinute": 825,
+            "endMinute": 895,
+            "artistLabel": "ミラクルファンファーレ！",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-87"
+            ]
+          },
+          {
+            "id": "tokuten-199",
+            "laneId": "reference-905",
+            "startMinute": 855,
+            "endMinute": 925,
+            "artistLabel": "脳内パステル",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-88"
+            ]
+          },
+          {
+            "id": "tokuten-200",
+            "laneId": "reference-905",
+            "startMinute": 885,
+            "endMinute": 955,
+            "artistLabel": "Lollipop♡CHU",
+            "itemType": "tokuten",
+            "boothId": "D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-89"
+            ]
+          },
+          {
+            "id": "tokuten-201",
+            "laneId": "reference-908",
+            "startMinute": 915,
+            "endMinute": 985,
+            "artistLabel": "himawari（船橋）",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-90"
+            ]
+          },
+          {
+            "id": "tokuten-202",
+            "laneId": "reference-905",
+            "startMinute": 945,
+            "endMinute": 1015,
+            "artistLabel": "逆転ねこぱんちっ！",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-91"
+            ]
+          },
+          {
+            "id": "tokuten-203",
+            "laneId": "reference-905",
+            "startMinute": 975,
+            "endMinute": 1045,
+            "artistLabel": "COLOR of COLOR",
+            "itemType": "tokuten",
+            "boothId": "D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-92"
+            ]
+          },
+          {
+            "id": "tokuten-204",
+            "laneId": "reference-908",
+            "startMinute": 1005,
+            "endMinute": 1075,
+            "artistLabel": "image",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-93"
+            ]
+          },
+          {
+            "id": "tokuten-205",
+            "laneId": "reference-905",
+            "startMinute": 1035,
+            "endMinute": 1105,
+            "artistLabel": "Cherie!",
+            "itemType": "tokuten",
+            "boothId": "C",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-94"
+            ]
+          },
+          {
+            "id": "tokuten-206",
+            "laneId": "reference-905",
+            "startMinute": 1065,
+            "endMinute": 1135,
+            "artistLabel": "W.ダブルヴィー",
+            "itemType": "tokuten",
+            "boothId": "D",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-95"
+            ]
+          },
+          {
+            "id": "tokuten-207",
+            "laneId": "reference-908",
+            "startMinute": 1095,
+            "endMinute": 1165,
+            "artistLabel": "シャニムニ＝パレード",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-96"
+            ]
+          },
+          {
+            "id": "tokuten-208",
+            "laneId": "lion-limited",
+            "startMinute": 665,
+            "endMinute": 735,
+            "artistLabel": "フェノメナ",
+            "itemType": "tokuten",
+            "boothId": "F",
+            "artistEntityIds": [],
+            "favoriteLevel": 2,
+            "pairedTokutenItemIds": [
+              "stage-101"
+            ]
+          },
+          {
+            "id": "tokuten-209",
+            "laneId": "lion-limited",
+            "startMinute": 695,
+            "endMinute": 765,
+            "artistLabel": "GANGDEMIC",
+            "itemType": "tokuten",
+            "boothId": "E",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-102"
+            ]
+          },
+          {
+            "id": "tokuten-210",
+            "laneId": "rad-nine-entrance",
+            "startMinute": 725,
+            "endMinute": 795,
+            "artistLabel": "Misology",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-103"
+            ]
+          },
+          {
+            "id": "tokuten-211",
+            "laneId": "lion-limited",
+            "startMinute": 755,
+            "endMinute": 825,
+            "artistLabel": "ACEQUAD",
+            "itemType": "tokuten",
+            "boothId": "F",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-104"
+            ]
+          },
+          {
+            "id": "tokuten-212",
+            "laneId": "lion-limited",
+            "startMinute": 785,
+            "endMinute": 855,
+            "artistLabel": "めっ！",
+            "itemType": "tokuten",
+            "boothId": "E",
+            "artistEntityIds": [],
+            "favoriteLevel": 2,
+            "pairedTokutenItemIds": [
+              "stage-105"
+            ]
+          },
+          {
+            "id": "tokuten-213",
+            "laneId": "rad-nine-entrance",
+            "startMinute": 815,
+            "endMinute": 885,
+            "artistLabel": "MAGMAZ",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "stage-106"
+            ]
+          },
+          {
+            "id": "tokuten-214",
+            "laneId": "lion-limited",
+            "startMinute": 845,
+            "endMinute": 915,
+            "artistLabel": "zanka",
+            "itemType": "tokuten",
+            "boothId": "F",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "stage-107"
+            ]
+          },
+          {
+            "id": "tokuten-215",
+            "laneId": "lion-limited",
+            "startMinute": 875,
+            "endMinute": 945,
+            "artistLabel": "RePLAY",
+            "itemType": "tokuten",
+            "boothId": "E",
+            "artistEntityIds": [],
+            "favoriteLevel": 2,
+            "pairedTokutenItemIds": [
+              "stage-108"
+            ]
+          },
+          {
+            "id": "tokuten-216",
+            "laneId": "rad-nine-entrance",
+            "startMinute": 905,
+            "endMinute": 975,
+            "artistLabel": "AZ-ON",
+            "itemType": "tokuten",
+            "boothId": "E",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "stage-109"
+            ]
+          },
+          {
+            "id": "tokuten-217",
+            "laneId": "lion-limited",
+            "startMinute": 935,
+            "endMinute": 1005,
+            "artistLabel": "EMPATHY",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-110"
+            ],
+            "boothId": "F"
+          },
+          {
+            "id": "tokuten-218",
+            "laneId": "lion-limited",
+            "startMinute": 965,
+            "endMinute": 1035,
+            "artistLabel": "JINKS",
+            "itemType": "tokuten",
+            "boothId": "E",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-111"
+            ]
+          },
+          {
+            "id": "tokuten-219",
+            "laneId": "rad-nine-entrance",
+            "startMinute": 995,
+            "endMinute": 1065,
+            "artistLabel": "名称非公開",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-112"
+            ]
+          },
+          {
+            "id": "tokuten-220",
+            "laneId": "lion-limited",
+            "startMinute": 1025,
+            "endMinute": 1095,
+            "artistLabel": "ANNYX",
+            "itemType": "tokuten",
+            "boothId": "F",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-113"
+            ]
+          },
+          {
+            "id": "tokuten-221",
+            "laneId": "lion-limited",
+            "startMinute": 1055,
+            "endMinute": 1125,
+            "artistLabel": "鳴ル神",
+            "itemType": "tokuten",
+            "boothId": "E",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-114"
+            ]
+          },
+          {
+            "id": "tokuten-222",
+            "laneId": "rad-nine-entrance",
+            "startMinute": 1085,
+            "endMinute": 1155,
+            "artistLabel": "じゅじゅ",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-115"
+            ]
+          },
+          {
+            "id": "tokuten-223",
+            "laneId": "lion-limited",
+            "startMinute": 1115,
+            "endMinute": 1185,
+            "artistLabel": "絶望キネマ",
+            "itemType": "tokuten",
+            "boothId": "F",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-116"
+            ]
+          },
+          {
+            "id": "tokuten-224",
+            "laneId": "lion-limited",
+            "startMinute": 1145,
+            "endMinute": 1215,
+            "artistLabel": "スパンコールグッドタイムズ",
+            "itemType": "tokuten",
+            "boothId": "E",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-117"
+            ]
+          },
+          {
+            "id": "tokuten-225",
+            "laneId": "rad-nine-entrance",
+            "startMinute": 1175,
+            "endMinute": 1245,
+            "artistLabel": "MAGICAL SPEC",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-118"
+            ]
+          },
+          {
+            "id": "tokuten-226",
+            "laneId": "lion-limited",
+            "startMinute": 1205,
+            "endMinute": 1275,
+            "artistLabel": "ラナキュラ",
+            "itemType": "tokuten",
+            "boothId": "F",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-119"
+            ]
+          },
+          {
+            "id": "tokuten-228",
+            "laneId": "zephyr-hall",
+            "startMinute": 1210,
+            "endMinute": 1330,
+            "artistLabel": "Kolokol / HIBANA / カラフルスクリーム",
+            "subContent": "終演後物販",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 3,
+            "pairedTokutenItemIds": [
+              "stage-24",
+              "stage-25",
+              "stage-26"
+            ]
+          },
+          {
+            "id": "tokuten-229",
+            "laneId": "rad-hall",
+            "startMinute": 1330,
+            "endMinute": 1400,
+            "artistLabel": "Cosmoslay / AIBECK / MAZE",
+            "subContent": "終演後物販",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-48",
+              "stage-49",
+              "stage-50"
+            ]
+          },
+          {
+            "id": "tokuten-230",
+            "laneId": "diva",
+            "startMinute": 1265,
+            "endMinute": 1335,
+            "artistLabel": "丑03-USHIMITSU- / acro-A / CYCLONISTA",
+            "subContent": "終演後物販",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-70",
+              "stage-71",
+              "stage-72"
+            ]
+          },
+          {
+            "id": "tokuten-231",
+            "laneId": "deep",
+            "startMinute": 1040,
+            "endMinute": 1110,
+            "artistLabel": "トウトイナ。 / OS☆U",
+            "subContent": "終演後物販",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-85",
+              "stage-86"
+            ]
+          },
+          {
+            "id": "tokuten-232",
+            "laneId": "world-dream-stage",
+            "startMinute": 1210,
+            "endMinute": 1280,
+            "artistLabel": "スーパーベイビーズ / サクヤコノハナ / アイドルカレッジ",
+            "subContent": "終演後物販",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-98",
+              "stage-99",
+              "stage-100"
+            ]
+          },
+          {
+            "id": "tokuten-233",
+            "laneId": "rad-nine",
+            "startMinute": 1285,
+            "endMinute": 1355,
+            "artistLabel": "ぜろから☆すた→と / buGG / AQA",
+            "subContent": "終演後物販",
+            "itemType": "tokuten",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [
+              "stage-120",
+              "stage-121",
+              "stage-122"
+            ]
+          },
+          {
+            "id": "78538e21-35a3-42e0-9bcf-4aff47c0ec03",
+            "laneId": "zephyr-hall",
+            "startMinute": 540,
+            "endMinute": 555,
+            "artistLabel": "Wristband交換",
+            "subContent": "",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [],
+            "itemType": "event",
+            "color": "#c0c0c0",
+            "sharedEventGroupId": "shared-ec1a19ba-b06c-49fa-937b-174b268e2153"
+          },
+          {
+            "id": "74dfec4d-7b88-420a-b9fa-a385fec05af6",
+            "laneId": "rad-hall",
+            "startMinute": 540,
+            "endMinute": 555,
+            "artistLabel": "Wristband交換",
+            "subContent": "",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [],
+            "itemType": "event",
+            "color": "#c0c0c0",
+            "sharedEventGroupId": "shared-ec1a19ba-b06c-49fa-937b-174b268e2153"
+          },
+          {
+            "id": "fca47681-d216-487f-927a-b6feae44b482",
+            "laneId": "diva",
+            "startMinute": 540,
+            "endMinute": 555,
+            "artistLabel": "Wristband交換",
+            "subContent": "",
+            "artistEntityIds": [],
+            "favoriteLevel": 0,
+            "pairedTokutenItemIds": [],
+            "itemType": "event",
+            "color": "#c0c0c0",
+            "sharedEventGroupId": "shared-ec1a19ba-b06c-49fa-937b-174b268e2153"
+          }
+        ]
+      }
+    ],
+    "updatedAt": "2026-10-25T16:25:00.557Z"
+  }
+}

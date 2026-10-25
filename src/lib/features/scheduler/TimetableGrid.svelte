@@ -3,6 +3,7 @@
 	import LaneHeader from '$lib/components/LaneHeader.svelte';
 	import ScheduleItemBlock from '$lib/components/ScheduleItemBlock.svelte';
 	import { currentTimeScrollTop } from './timetable-layout';
+	import { canAdjustLaneDisplayWidth, shouldStackMultiBoothActions } from './lane-width';
 	import type { FestivalDay, Lane, LaneType, ScheduleItem, UserPreferences } from '$lib/types';
 	import type { CreateState, FavoriteFilter } from '$lib/ui-types';
 	import type { SchedulerCopyKey } from './scheduler-copy';
@@ -10,6 +11,7 @@
 	type GridProps = {
 		day?: FestivalDay;
 		favoriteFilter: FavoriteFilter;
+		setFavoriteFilter: (level: FavoriteFilter) => void;
 		favoriteItems: ScheduleItem[];
 		items: ScheduleItem[];
 		compactActive: boolean;
@@ -33,16 +35,14 @@
 		setLaneReorderTarget: (laneId: string) => void;
 		finishLaneReorder: () => void;
 		moveLaneBy: (laneId: string, direction: -1 | 1) => void;
-		beginLaneResize: (event: PointerEvent, laneId: string) => void;
-		updateLaneResize: (event: PointerEvent) => void;
-		finishLaneResize: () => void;
-		laneResizePreview: { laneId: string; width: number } | null;
+		onLaneWidthAdjust: (laneId: string, displayedGridWidth: number, direction: -1 | 1) => void;
 		reorderingLaneId: string | null;
 		reorderTargetLaneId: string | null;
 		compactItemsForColumn: (column: number) => ScheduleItem[];
 		displayItem: (item: ScheduleItem) => boolean;
 		conflictIds: Set<string>;
 		itemStyle: (item: ScheduleItem) => string;
+		displayedItem: (item: ScheduleItem) => ScheduleItem;
 		itemHasLimitedContent: (item: ScheduleItem) => boolean;
 		itemBottomLine: (item: ScheduleItem) => string;
 		shouldShowItemBottomLine: (item: ScheduleItem) => boolean;
@@ -79,6 +79,7 @@
 	let {
 		day,
 		favoriteFilter,
+		setFavoriteFilter,
 		favoriteItems,
 		items,
 		compactActive,
@@ -102,16 +103,14 @@
 		setLaneReorderTarget,
 		finishLaneReorder,
 		moveLaneBy,
-		beginLaneResize,
-		updateLaneResize,
-		finishLaneResize,
-		laneResizePreview,
+		onLaneWidthAdjust,
 		reorderingLaneId,
 		reorderTargetLaneId,
 		compactItemsForColumn,
 		displayItem,
 		conflictIds,
 		itemStyle,
+		displayedItem,
 		itemHasLimitedContent,
 		itemBottomLine,
 		shouldShowItemBottomLine,
@@ -146,18 +145,17 @@
 	}: GridProps = $props();
 
 	let scroller = $state<HTMLDivElement>();
+	let frozenHeaders = $state(true);
+	let favoriteDrawerOpen = $state(false);
 	let horizontalScrollControls = $state({ visible: false, top: 0, left: 0, right: 0 });
+	let viewportHeader = $state({ visible: false, left: 0, width: 0, scrollLeft: 0 });
 	let showCurrentTimeMarker = $state(false);
+	let displayedGridWidth = $state(0);
 	const renderedLaneColumnTemplate = $derived(
 		compactActive
 			? laneColumnTemplate
 			: visibleLanes
-					.map((lane) => {
-						const width = laneResizePreview?.laneId === lane.id
-							? laneResizePreview.width * (lane.type === 'tokuten' && (lane.booths?.length ?? 0) > 2 ? 1.5 : 1)
-							: laneDisplayWidth(lane);
-						return `${width}px`;
-					})
+					.map((lane) => `${laneDisplayWidth(lane)}px`)
 					.join(' ')
 	);
 	const currentTimeMarkerVisible = $derived(
@@ -166,9 +164,14 @@
 			nowMinute <= gridRange.endMinute
 	);
 
+	function hasTightMultiBoothCells(lane: Lane): boolean {
+		return shouldStackMultiBoothActions(lane, laneDisplayWidth(lane));
+	}
+
 	function updateHorizontalScrollControls(): void {
 		if (!scroller || typeof window === 'undefined') return;
 		const rect = scroller.getBoundingClientRect();
+		displayedGridWidth = Math.max(0, scroller.clientWidth - 64);
 		const displayedTop = Math.max(0, rect.top);
 		const displayedBottom = Math.min(window.innerHeight, rect.bottom);
 		horizontalScrollControls = {
@@ -179,6 +182,17 @@
 			top: Math.round((displayedTop + displayedBottom) / 2),
 			left: Math.max(8, Math.round(rect.left + 72)),
 			right: Math.max(8, Math.round(window.innerWidth - rect.right + 10))
+		};
+		viewportHeader = {
+			visible:
+				frozenHeaders &&
+				!compactActive &&
+				window.matchMedia('(min-width: 781px)').matches &&
+				rect.top < 0 &&
+				rect.bottom > 74,
+			left: Math.round(rect.left),
+			width: Math.round(rect.width),
+			scrollLeft: scroller.scrollLeft
 		};
 	}
 
@@ -199,6 +213,10 @@
 			),
 			behavior: 'smooth'
 		});
+	}
+
+	function scrollPageToTop(): void {
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
 	$effect(() => {
@@ -235,9 +253,17 @@
 				<div
 					class:compact-grid={compactActive}
 					class="schedule-grid"
+					class:frozen-headers={frozenHeaders}
 					style={`--grid-columns:${visibleColumns};--lane-columns:${renderedLaneColumnTemplate};--grid-height:${gridHeight}px;--hour-height:${preferences.timeZoom}px;--hour-offset:${-((gridRange.startMinute % 60) / 60) * preferences.timeZoom}px;--half-hour-height:${preferences.timeZoom / 2}px;--half-hour-offset:${-((gridRange.startMinute % 30) / 60) * preferences.timeZoom}px;--grid-step-height:${(preferences.timeZoom * preferences.snapMinutes) / 60}px;--grid-step-offset:${-((gridRange.startMinute % preferences.snapMinutes) / 60) * preferences.timeZoom}px;--lane-width:${preferences.laneWidths.stage}px;--header-height:${compactActive ? 0 : 74}px;`}
 				>
-					<div class="schedule-corner">TIME</div>
+					<button
+						class="schedule-corner"
+						class:active={frozenHeaders}
+						aria-pressed={frozenHeaders}
+						aria-label={frozenHeaders ? '見出しの固定を解除' : '見出しを固定'}
+						title={frozenHeaders ? '見出しの固定を解除' : '見出しを固定'}
+						onclick={() => (frozenHeaders = !frozenHeaders)}
+					>⌖</button>
 					{#if !compactActive}
 						{#each visibleLanes as lane (lane.id)}
 							<LaneHeader
@@ -262,9 +288,9 @@
 								onReorderTarget={() => setLaneReorderTarget(lane.id)}
 								onReorderEnd={finishLaneReorder}
 								onMoveBy={(direction) => moveLaneBy(lane.id, direction)}
-								onResizeStart={(event) => beginLaneResize(event, lane.id)}
-								onResizeMove={updateLaneResize}
-								onResizeEnd={finishLaneResize}
+								widthDecreaseDisabled={!canAdjustLaneDisplayWidth(lane, laneDisplayWidth(lane), displayedGridWidth || Number.POSITIVE_INFINITY, -1)}
+								widthIncreaseDisabled={!canAdjustLaneDisplayWidth(lane, laneDisplayWidth(lane), displayedGridWidth || Number.POSITIVE_INFINITY, 1)}
+								onWidthAdjust={(direction) => onLaneWidthAdjust(lane.id, displayedGridWidth || Number.POSITIVE_INFINITY, direction)}
 							/>
 						{/each}
 					{/if}
@@ -301,6 +327,8 @@
 									{#each compactItemsForColumn(Number(column)) as item (item.id)}
 										<ScheduleItemBlock
 											{item}
+											displayStartMinute={displayedItem(item).startMinute}
+											displayEndMinute={displayedItem(item).endMinute}
 											style={itemStyle(item)}
 											visible={displayItem(item)}
 											conflict={conflictIds.has(item.id)}
@@ -312,6 +340,7 @@
 											bottomLine={itemBottomLine(item)}
 											showBottomLine={shouldShowItemBottomLine(item)}
 											booths={[]}
+											tightMultiBooth={false}
 											onCycleFavorite={() => cycleItem(item.id)}
 											onOpenRelated={() => openRelated(item)}
 											onPointer={(event, kind) => beginItemPointer(event, item, kind)}
@@ -347,6 +376,8 @@
 										{#each itemForLane(lane.id) as item (item.id)}
 											<ScheduleItemBlock
 												{item}
+												displayStartMinute={displayedItem(item).startMinute}
+												displayEndMinute={displayedItem(item).endMinute}
 												style={itemStyle(item)}
 												visible={displayItem(item)}
 												conflict={conflictIds.has(item.id)}
@@ -358,6 +389,7 @@
 												bottomLine={itemBottomLine(item)}
 												showBottomLine={shouldShowItemBottomLine(item)}
 											booths={lane.booths ?? []}
+											tightMultiBooth={hasTightMultiBoothCells(lane)}
 												onCycleFavorite={() => cycleItem(item.id)}
 												onOpenRelated={() => openRelated(item)}
 												onPointer={(event, kind) => beginItemPointer(event, item, kind)}
@@ -376,6 +408,30 @@
 					</div>
 				</div>
 			</div>
+			{#if viewportHeader.visible}
+				<div
+					class="viewport-grid-header"
+					style={`left:${viewportHeader.left}px;width:${viewportHeader.width}px`}
+				>
+					<div
+						class="schedule-grid viewport-grid-header-grid"
+						style={`--lane-columns:${renderedLaneColumnTemplate};--header-height:74px;transform:translateX(-${viewportHeader.scrollLeft}px)`}
+					>
+						<button
+							class="schedule-corner"
+							aria-label="見出しの固定を解除"
+							title="見出しの固定を解除"
+							onclick={() => (frozenHeaders = false)}
+						>⌖</button>
+						{#each visibleLanes as lane (lane.id)}
+							<div class="lane-header viewport-lane-header" style={laneStyle(lane)}>
+								<strong>{lane.name}</strong>
+								{#if lane.booths?.length}<small>{lane.booths.join(' · ')}</small>{/if}
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 			{#if horizontalScrollControls.visible}
 				<button
 					class="timetable-scroll-control timetable-scroll-left"
@@ -393,6 +449,15 @@
 				>›</button>
 			{/if}
 			<div class="timetable-floating-controls">
+				<button class="page-top-button" onclick={scrollPageToTop}>↑ ページ最上部へ</button>
+				<div class="favorite-floating-control">
+					{#if favoriteDrawerOpen}<div class="favorite-filter-drawer" aria-label={t('favorite')}>
+						{#each [0, 1, 2, 3] as level (level)}
+							<button class:active={favoriteFilter === level} onclick={() => { setFavoriteFilter(level as FavoriteFilter); favoriteDrawerOpen = false; }}>{level === 0 ? '0' : level === 3 ? '♥3' : `♥${level}+`}</button>
+						{/each}
+					</div>{/if}
+					<button class="favorite-floating-button" aria-expanded={favoriteDrawerOpen} onclick={() => (favoriteDrawerOpen = !favoriteDrawerOpen)}>♥ お気に入り</button>
+				</div>
 				{#if editMode}
 					<section class="floating-edit-panel" aria-label={t('editTools')}>
 						<div class="floating-edit-row floating-settings-row">

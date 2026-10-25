@@ -1,8 +1,7 @@
 import { snapMinutes } from '$lib/scheduler';
 import type { Festival, Lane, ScheduleItem, UserPreferences } from '$lib/types';
-import type { CreateState, DragState, LaneResizeState } from '$lib/ui-types';
+import type { CreateState, DragState } from '$lib/ui-types';
 import { resolveItemDrop } from './item-drop-resolution';
-import { resolvedLaneBaseWidth } from './lane-width';
 
 type GridInteractionOptions = {
 	getEditMode: () => boolean;
@@ -22,18 +21,14 @@ type GridInteractionOptions = {
 	openRelated: (item: ScheduleItem) => void;
 	notify: (message: string) => void;
 	reorderLanes: (sourceId: string, targetId: string) => void;
-	getLaneEndMinute?: (lane: Lane) => number;
 };
 
 const DAY_END_MINUTE = 30 * 60;
-const MIN_LANE_WIDTH = 100;
-const MAX_LANE_WIDTH = 480;
 
 export function createGridInteractionController(options: GridInteractionOptions) {
 	let dragging = $state<DragState>(null);
 	let creating = $state<CreateState>(null);
 	let laneReorder = $state<{ sourceLaneId: string; targetLaneId: string } | null>(null);
-	let laneResize = $state<LaneResizeState>(null);
 	let selectedItemIds = $state<string[]>([]);
 	let selectedLaneId = $state<string | null>(null);
 	let multiSelectEnabled = $state(false);
@@ -68,7 +63,6 @@ export function createGridInteractionController(options: GridInteractionOptions)
 			pointerId: event.pointerId,
 			direction: 'down',
 			selectedItemIds: selected,
-			limitMinute: lane ? (options.getLaneEndMinute?.(lane) ?? lane.endMinute ?? DAY_END_MINUTE) : DAY_END_MINUTE,
 			resolution: null
 		};
 	}
@@ -115,7 +109,7 @@ export function createGridInteractionController(options: GridInteractionOptions)
 				direction,
 				policy: options.getPreferences().itemOverlapPolicy,
 				selectedItemIds: dragging.kind === 'move' ? dragging.selectedItemIds : undefined,
-				endMinute: dragging.limitMinute
+				endMinute: DAY_END_MINUTE
 			})
 		};
 	}
@@ -187,43 +181,6 @@ export function createGridInteractionController(options: GridInteractionOptions)
 		options.reorderLanes(laneId, target.id);
 	}
 
-	function beginLaneResize(event: PointerEvent, laneId: string): void {
-		if (!options.getEditMode() || options.getCompactActive() || event.button !== 0) return;
-		const lane = options.getLanes().find((candidate) => candidate.id === laneId);
-		if (!lane) return;
-		event.preventDefault();
-		(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-		const preferences = options.getPreferences();
-		const startWidth = resolvedLaneBaseWidth(lane, preferences.laneWidthMode, preferences.laneWidths);
-		laneResize = { laneId, originX: event.clientX, startWidth, width: startWidth };
-	}
-
-	function updateLaneResize(event: PointerEvent): void {
-		if (!laneResize) return;
-		laneResize.width = Math.max(
-			MIN_LANE_WIDTH,
-			Math.min(MAX_LANE_WIDTH, laneResize.startWidth + event.clientX - laneResize.originX)
-		);
-	}
-
-	function finishLaneResize(): void {
-		const resize = laneResize;
-		laneResize = null;
-		if (!resize) return;
-		const lane = options.getLanes().find((candidate) => candidate.id === resize.laneId);
-		if (!lane || resize.width === resize.startWidth) return;
-		if (options.getPreferences().laneWidthMode === 'type') {
-			options.updatePreferences((preferences) => {
-				preferences.laneWidths[lane.type] = resize.width;
-			});
-			return;
-		}
-		options.updateFestival((next) => {
-			const target = next.days.flatMap((day) => day.lanes).find((candidate) => candidate.id === lane.id);
-			if (target) target.width = resize.width;
-		});
-	}
-
 	function setMultiSelectEnabled(value: boolean): void {
 		multiSelectEnabled = value;
 		if (!value) clearSelection();
@@ -278,9 +235,6 @@ export function createGridInteractionController(options: GridInteractionOptions)
 		toggleItemSelection,
 		clearSelection,
 		consumeSuppressedCardClick,
-		get laneResizePreview() {
-			return laneResize;
-		},
 		beginItemPointer,
 		beginCreate,
 		handlePointerMove,
@@ -289,9 +243,6 @@ export function createGridInteractionController(options: GridInteractionOptions)
 		setLaneReorderTarget,
 		finishLaneReorder,
 		moveLaneBy,
-		beginLaneResize,
-		updateLaneResize,
-		finishLaneResize,
 		get reorderingLaneId() {
 			return laneReorder?.sourceLaneId ?? null;
 		},

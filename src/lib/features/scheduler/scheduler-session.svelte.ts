@@ -8,6 +8,8 @@ import { deleteFestival, listFestivals, loadPreferences, saveFestival, savePrefe
 import type { Festival, FestivalDay, UserPreferences } from '$lib/types';
 import type { FestivalSettingsDraft } from '$lib/ui-types';
 import { createFestivalHistory } from './festival-history.svelte';
+import { resetFestival } from './festival-reset';
+import { withoutSavedFestival } from './saved-festival-list';
 import { formatMinute, normalizeToFiveMinuteTime, parseMinute } from './timetable-layout';
 
 type SessionOptions = {
@@ -22,6 +24,7 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 	let preferences = $state<UserPreferences>({ ...defaults });
 	let selectedDayId = $state(initialFestival.days[0]?.id ?? '');
 	let selectedSampleId = $state(initialFestival.id);
+	let savedFestivals = $state<Festival[]>([]);
 	let isLoading = $state(true);
 
 	function persistPreferences(): void {
@@ -30,6 +33,10 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 
 	function persistFestival(): void {
 		void saveFestival(history.festival);
+		savedFestivals = [
+			...savedFestivals.filter((candidate) => candidate.id !== history.festival.id),
+			cloneFestival(history.festival)
+		];
 		preferences.lastFestivalId = history.festival.id;
 		preferences.lastDayId = selectedDayId;
 		persistPreferences();
@@ -114,10 +121,35 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 		notify('サンプルをローカルコピーとして開きました');
 	}
 
-	async function removeFestival(): Promise<void> {
-		await deleteFestival(history.festival.id);
-		newFestival();
-		notify('ローカル timetable を削除しました');
+	function openSavedFestival(id: string): void {
+		const savedFestival = savedFestivals.find((candidate) => candidate.id === id);
+		if (!savedFestival) return;
+		history.replace(cloneFestival(savedFestival));
+		selectedDayId = savedFestival.days[0]?.id ?? '';
+		persistFestival();
+	}
+
+	async function deleteSavedFestival(id: string): Promise<void> {
+		const isActiveFestival = history.festival.id === id;
+		await deleteFestival(id);
+		savedFestivals = withoutSavedFestival(savedFestivals, id);
+
+		if (isActiveFestival) {
+			const next = savedFestivals[0] ? cloneFestival(savedFestivals[0]) : createBlankFestival();
+			history.replace(next);
+			selectedDayId = next.days[0]?.id ?? '';
+			persistFestival();
+		}
+
+		notify('ローカルのタイムテーブルを削除しました');
+	}
+
+	function resetCurrentFestival(): void {
+		const next = resetFestival(history.festival, createBlankFestival());
+		history.replace(next);
+		selectedDayId = next.days[0]?.id ?? '';
+		persistFestival();
+		notify('タイムテーブルをリセットしました');
 	}
 
 	function importFestival(text: string): boolean {
@@ -201,6 +233,7 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 			}
 		}
 		const stored = await listFestivals();
+		savedFestivals = stored.map(cloneFestival);
 		const storedLast = stored.find((candidate) => candidate.id === preferences.lastFestivalId);
 		if (storedLast) history.replace(storedLast);
 		else if (stored[0]) history.replace(stored[0]);
@@ -225,6 +258,9 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 		get selectedSampleId() {
 			return selectedSampleId;
 		},
+		get savedFestivals() {
+			return savedFestivals;
+		},
 		get isLoading() {
 			return isLoading;
 		},
@@ -245,7 +281,9 @@ export function createSchedulerSession({ defaults, initialFestival, newId, notif
 		addDay,
 		newFestival,
 		copyTemplate,
-		removeFestival,
+		resetCurrentFestival,
+		openSavedFestival,
+		deleteSavedFestival,
 		importFestival,
 		saveFestivalSettings,
 		load

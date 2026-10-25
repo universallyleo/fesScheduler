@@ -130,7 +130,7 @@ describe('resolveItemDrop', () => {
 		]);
 	});
 
-	it('caps an upward cascade at the lane opening time and reports the remaining overlap', () => {
+	it('allows an upward cascade before a lane opening time', () => {
 		const openingLane = { ...lane, openingMinute: 600 };
 		const moving = item('moving', 640, 660);
 		const result = resolveItemDrop({
@@ -143,9 +143,10 @@ describe('resolveItemDrop', () => {
 			policy: 'cascade'
 		});
 
-		expect(result.hasConflict).toBe(true);
+		expect(result.hasConflict).toBe(false);
 		expect(result.patches).toEqual([
-			{ id: 'moving', startMinute: 610, endMinute: 630 }
+			{ id: 'moving', startMinute: 610, endMinute: 630 },
+			{ id: 'earlier', startMinute: 590, endMinute: 610 }
 		]);
 	});
 

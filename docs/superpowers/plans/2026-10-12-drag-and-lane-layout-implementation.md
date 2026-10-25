@@ -16,7 +16,7 @@
 - Change widths only while edit mode is active.
 - Default divider resizing changes every lane of the same type; individual mode changes only the selected lane.
 - Preserve proportional multi-booth geometry, including the 150% width treatment for three or more booths.
-- Snap drag calculations to five-minute increments and clamp shifted schedules to lane opening time/00:00 and 30:00.
+- Snap drag calculations to five-minute increments and clamp shifted schedules only to 00:00–30:00. Festival and lane opening/closing times are display metadata for dragging.
 - Persist item movement only once, when the pointer drag finishes.
 - Do not run Prettier.
 
@@ -24,7 +24,7 @@
 
 - A 特典会 lane with three booths must retain evenly proportional booth positions after its type or individual width changes; Task 2 tests both inherited and overridden widths.
 - A downward cascade at 29:55 must not place any item later than 30:00; Task 1 tests the capped resolution.
-- An upward cascade in a lane with `openingMinute` must not cross that opening time; Task 1 tests the opening-time clamp.
+- An upward cascade in a lane with `openingMinute` may cross that opening time but must not cross 00:00; Task 1 tests this behavior.
 - `空きブースへ移動` must preserve the original booth and emit an overlap result if no booth is free; Task 1 tests this fallback.
 - A long pointer move must not create multiple history writes; Task 3 tests that only `handlePointerUp` calls `updateFestival`.
 
@@ -72,7 +72,7 @@ src/
 
 - [x] **Step 1: Write failing resolver tests**
 
-  Cover: allow-with-warning; free booth selection; no-free-booth fallback; a 10-minute downward cascade; a 10-minute upward cascade; 30:00 and opening-time clamps.
+  Cover: allow-with-warning; free booth selection; no-free-booth fallback; a 10-minute downward cascade; a 10-minute upward cascade; 00:00 and 30:00 clamps.
 
 - [x] **Step 2: Run the resolver test file and verify it fails**
 
@@ -146,7 +146,7 @@ src/
 
 - [x] **Step 4: Implement lane-width helpers and use them in presentation**
 
-  `resolvedLaneBaseWidth` returns `lane.width` only in individual mode, otherwise the type width. `displayLaneWidth` applies the multi-booth 1.5 multiplier after the base-width calculation.
+  `resolvedLaneBaseWidth` returns `lane.width` only in individual mode, otherwise the type width. **Superseded for current width rules:** see `docs/superpowers/specs/2026-10-25-lane-width-controls-design.md`; multi-booth lanes now use a documented booth-count offset rather than a fixed 1.5 multiplier.
 
 - [x] **Step 5: Run width and presentation tests**
 

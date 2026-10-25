@@ -37,6 +37,40 @@ function createFixture() {
 }
 
 describe('item editor controller new item drafts', () => {
+	it('makes the saved simultaneous-event group match the checked items', () => {
+		const { controller, getFestival } = createFixture();
+		const items = getFestival().days[0]!.items;
+		items.push(
+			{
+				id: 'current', laneId: 'lane-a', startMinute: 600, endMinute: 630,
+				artistLabel: 'Wristband交換', subContent: '', artistEntityIds: [], favoriteLevel: 0,
+				pairedTokutenItemIds: [], sharedEventGroupId: 'current-group'
+			},
+			{
+				id: 'former-member', laneId: 'lane-a', startMinute: 600, endMinute: 630,
+				artistLabel: 'Wristband交換', subContent: '', artistEntityIds: [], favoriteLevel: 0,
+				pairedTokutenItemIds: [], sharedEventGroupId: 'current-group'
+			},
+			{
+				id: 'selected', laneId: 'lane-a', startMinute: 600, endMinute: 630,
+				artistLabel: 'Wristband交換', subContent: '', artistEntityIds: [], favoriteLevel: 0,
+				pairedTokutenItemIds: [], sharedEventGroupId: 'other-group'
+			}
+		);
+
+		controller.open(items[0]!);
+		expect(controller.sharedEventItemIds).toEqual(['former-member']);
+		controller.toggleSharedEventItem('former-member');
+		controller.toggleSharedEventItem('selected');
+		controller.save();
+
+		expect(getFestival().days[0]!.items.map((item) => [item.id, item.sharedEventGroupId])).toEqual([
+			['current', 'current-group'],
+			['former-member', undefined],
+			['selected', 'current-group']
+		]);
+	});
+
 	it('keeps a manually opened new item outside the festival until it is saved', () => {
 		const { controller, getFestival, notices } = createFixture();
 

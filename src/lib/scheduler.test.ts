@@ -82,6 +82,28 @@ describe('scheduler pure functions', () => {
 		expect(conflicts.sameArtist.map((pair) => pair.sort())).toContainEqual(['a', 'c']);
 	});
 
+	it('does not flag deliberately grouped simultaneous events across lanes', () => {
+		const conflicts = detectConflicts([
+			{ ...item('wristband-main', 'main', 600, 660, 'Wristband交換'), sharedEventGroupId: 'wristband' },
+			{ ...item('wristband-sub', 'sub', 600, 660, 'Wristband交換'), sharedEventGroupId: 'wristband' },
+			{ ...item('unrelated', 'garden', 600, 660, 'Wristband交換'), sharedEventGroupId: 'different' },
+			{ ...item('same-booth', 'main', 630, 690, 'Wristband交換'), sharedEventGroupId: 'wristband' }
+		]);
+
+		expect(conflicts.sameArtist.map((pair) => pair.sort())).not.toContainEqual([
+			'wristband-main',
+			'wristband-sub'
+		]);
+		expect(conflicts.sameArtist.map((pair) => pair.sort())).toContainEqual([
+			'unrelated',
+			'wristband-main'
+		]);
+		expect(conflicts.sameLane.map((pair) => pair.sort())).toContainEqual([
+			'same-booth',
+			'wristband-main'
+		]);
+	});
+
 	it('cycles favorite levels from zero through three', () => {
 		expect(cycleFavorite(0)).toBe(1);
 		expect(cycleFavorite(3)).toBe(0);

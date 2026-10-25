@@ -48,13 +48,13 @@ function conflicts(items: ScheduleItem[], patches: ItemDropPatch[]): boolean {
 	});
 }
 
-function clampDelta(selected: ScheduleItem[], proposedDelta: number, lane: Lane, endMinute: number): number {
+function clampDelta(selected: ScheduleItem[], proposedDelta: number, endMinute: number): number {
 	const firstStart = Math.min(...selected.map((item) => item.startMinute));
 	const lastEnd = Math.max(...selected.map((item) => item.endMinute));
-	return Math.max((lane.openingMinute ?? 0) - firstStart, Math.min(proposedDelta, endMinute - lastEnd));
+	return Math.max(-firstStart, Math.min(proposedDelta, endMinute - lastEnd));
 }
 
-function resolveCascade(selected: ScheduleItem[], unselected: ScheduleItem[], patches: ItemDropPatch[], direction: 'up' | 'down', lane: Lane, endMinute: number): ItemDropResolution {
+function resolveCascade(selected: ScheduleItem[], unselected: ScheduleItem[], patches: ItemDropPatch[], direction: 'up' | 'down', endMinute: number): ItemDropResolution {
 	const cascadePatches = [...patches];
 	let hasConflict = false;
 	for (const boothId of new Set(selected.map((item) => item.boothId ?? ''))) {
@@ -74,7 +74,7 @@ function resolveCascade(selected: ScheduleItem[], unselected: ScheduleItem[], pa
 			} else {
 				if (candidate.endMinute <= boundary) break;
 				if (candidate.startMinute >= groupEnd) continue;
-				if (boundary - duration < (lane.openingMinute ?? 0)) { hasConflict = true; break; }
+				if (boundary - duration < 0) { hasConflict = true; break; }
 				cascadePatches.push(toPatch(candidate, boundary - duration, boundary));
 				boundary -= duration;
 			}
@@ -89,7 +89,7 @@ export function resolveItemDrop(input: ItemDropInput): ItemDropResolution {
 	const selected = laneItems.filter((candidate) => selectedIds.has(candidate.id));
 	if (!selected.length) return { patches: [], hasConflict: false };
 	const endMinute = input.endMinute ?? DAY_END_MINUTE;
-	const delta = clampDelta(selected, input.proposedStartMinute - input.item.startMinute, input.lane, endMinute);
+	const delta = clampDelta(selected, input.proposedStartMinute - input.item.startMinute, endMinute);
 	const patches = selected.map((item) => toPatch(item, item.startMinute + delta, item.endMinute + delta));
 	const unselected = laneItems.filter((candidate) => !selectedIds.has(candidate.id));
 
@@ -99,5 +99,5 @@ export function resolveItemDrop(input: ItemDropInput): ItemDropResolution {
 		if (freeBooth) return { patches: [toPatch(selected[0] as ScheduleItem, moved.startMinute, moved.endMinute, freeBooth)], hasConflict: false };
 	}
 	if (input.policy !== 'cascade') return { patches, hasConflict: conflicts(laneItems, patches) };
-	return resolveCascade(selected, unselected, patches, input.direction, input.lane, endMinute);
+	return resolveCascade(selected, unselected, patches, input.direction, endMinute);
 }

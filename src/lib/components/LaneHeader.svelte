@@ -16,9 +16,9 @@
 		onReorderStart,
 		onReorderTarget,
 		onReorderEnd,
-		onResizeStart,
-		onResizeMove,
-		onResizeEnd,
+		widthDecreaseDisabled,
+		widthIncreaseDisabled,
+		onWidthAdjust,
 		onMoveBy
 	}: {
 		lane: Lane;
@@ -35,9 +35,9 @@
 		onReorderStart: (event: PointerEvent) => void;
 		onReorderTarget: () => void;
 		onReorderEnd: () => void;
-		onResizeStart: (event: PointerEvent) => void;
-		onResizeMove: (event: PointerEvent) => void;
-		onResizeEnd: () => void;
+		widthDecreaseDisabled: boolean;
+		widthIncreaseDisabled: boolean;
+		onWidthAdjust: (direction: -1 | 1) => void;
 		onMoveBy: (direction: -1 | 1) => void;
 	} = $props();
 
@@ -72,19 +72,12 @@
 	{#if lane.booths?.length}<small>{lane.booths.join(' · ')}</small>{/if}
 	{#if editing}
 		<button class="lane-edit-button" aria-label={`${editLabel} ${lane.name}`} onclick={onEdit}>✎</button>
+		<div class="lane-width-controls" aria-label={`${lane.name}の幅を変更`}>
+			<button aria-label={`${lane.name}の幅を10px狭く`} title="幅−" disabled={widthDecreaseDisabled} onclick={() => onWidthAdjust(-1)}>−</button>
+			<button aria-label={`${lane.name}の幅を10px広く`} title="幅＋" disabled={widthIncreaseDisabled} onclick={() => onWidthAdjust(1)}>＋</button>
+		</div>
 	{/if}
 	<button class="lane-info-button" aria-label={`${lane.name} ${infoLabel}`} onclick={onInfo}>ⓘ</button>
 	{#if lane.openingMinute !== undefined}<small>OPEN {formatMinute(lane.openingMinute)}</small>{/if}
 	{#if reorderTarget && reorderDestination}<span class="lane-reorder-destination">{reorderDestination}</span>{/if}
-	{#if editing}
-		<button
-			class="lane-resize-handle"
-			aria-label={`レーン幅を変更: ${lane.name}`}
-			title="レーン幅を変更"
-			onpointerdown={onResizeStart}
-			onpointermove={onResizeMove}
-			onpointerup={onResizeEnd}
-			onpointercancel={onResizeEnd}
-		></button>
-	{/if}
 </div>

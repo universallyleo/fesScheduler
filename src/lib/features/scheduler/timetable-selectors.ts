@@ -32,7 +32,15 @@ export function createTimetableSelectors(context: () => SelectorContext) {
 	}
 
 	function relatedItemsForLane(lane: Lane): ScheduleItem[] {
-		return context().items.filter((item) => item.laneId === lane.id && item.id !== context().editDraft?.id);
+		return context()
+			.items
+			.filter((item) => item.laneId === lane.id && item.id !== context().editDraft?.id)
+			.sort(
+				(left, right) =>
+					left.startMinute - right.startMinute ||
+					left.endMinute - right.endMinute ||
+					left.artistLabel.localeCompare(right.artistLabel, 'ja')
+			);
 	}
 
 	function relatedItemsForBooth(lane: Lane, booth: string): ScheduleItem[] {

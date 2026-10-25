@@ -92,6 +92,7 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 	}
 
 	return {
+		displayedItem: previewedItem,
 		displayedItemHeight,
 		itemHasLimitedContent,
 		shouldShowItemBottomLine,

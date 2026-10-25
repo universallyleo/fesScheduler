@@ -37,6 +37,7 @@ export function createItemEditorController(options: ItemEditorOptions) {
 	let copyAcrossBooths = $state(false);
 	let boothOffsets = $state<number[]>([5]);
 	let boothRepeatNames = $state<Record<string, string>>({});
+	let sharedEventItemIds = $state<string[]>([]);
 
 	function repeatInput(namesText = repeatNamesText) {
 		return {
@@ -104,6 +105,13 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		copyAcrossBooths = false;
 		boothOffsets = [5];
 		boothRepeatNames = {};
+		const sharedGroupId = item.sharedEventGroupId?.trim();
+		sharedEventItemIds = sharedGroupId
+			? options
+					.getItems()
+					.filter((candidate) => candidate.id !== item.id && candidate.sharedEventGroupId?.trim() === sharedGroupId)
+					.map((candidate) => candidate.id)
+			: [];
 	}
 
 	function openNew({
@@ -146,6 +154,7 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		copyAcrossBooths = false;
 		boothOffsets = [5];
 		boothRepeatNames = {};
+		sharedEventItemIds = [];
 	}
 
 	function close(): void {
@@ -154,6 +163,7 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		isNew = false;
 		destinationLocked = false;
 		relatedLaneId = '';
+		sharedEventItemIds = [];
 	}
 
 	function setDestinationLaneId(laneId: string): void {
@@ -197,6 +207,12 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			: [...draft.pairedTokutenItemIds, relatedItemId];
 	}
 
+	function toggleSharedEventItem(itemId: string): void {
+		sharedEventItemIds = sharedEventItemIds.includes(itemId)
+			? sharedEventItemIds.filter((id) => id !== itemId)
+			: [...sharedEventItemIds, itemId];
+	}
+
 	function save(): void {
 		if (!draft || draft.endMinute <= draft.startMinute) {
 			options.notify('終了時刻は開始時刻より後にしてください');
@@ -219,6 +235,17 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		const firstSpec = repeatedSpecs[0];
 		if (firstSpec) Object.assign(savedDraft, firstSpec);
 		const items = options.getItems();
+		const originalSharedEventGroupId = items
+			.find((item) => item.id === savedDraft.id)
+			?.sharedEventGroupId?.trim();
+		const selectedSharedEventItemIds = sharedEventItemIds.filter((id) =>
+			items.some((item) => item.id === id)
+		);
+		const sharedEventGroupId = selectedSharedEventItemIds.length
+			? originalSharedEventGroupId || `shared-${options.newId()}`
+			: undefined;
+		if (sharedEventGroupId) savedDraft.sharedEventGroupId = sharedEventGroupId;
+		else delete savedDraft.sharedEventGroupId;
 		const originalPairIds = items.find((item) => item.id === savedDraft.id)?.pairedTokutenItemIds ?? [];
 		const delayMinutes = relatedDelay === 'custom' ? customRelatedDelay : Number.parseInt(relatedDelay, 10);
 		const newRelatedLaneType = laneTypes.find((type) => relatedLaneId === `new:${type}`);
@@ -271,6 +298,16 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			if (newRelatedLane) targetDay.lanes.push(newRelatedLane);
 			for (const candidate of targetDay.items) {
 				if (candidate.id === savedDraft.id) continue;
+				if (
+					sharedEventGroupId &&
+					candidate.sharedEventGroupId?.trim() === originalSharedEventGroupId &&
+					!selectedSharedEventItemIds.includes(candidate.id)
+				) {
+					delete candidate.sharedEventGroupId;
+				}
+				if (sharedEventGroupId && selectedSharedEventItemIds.includes(candidate.id)) {
+					candidate.sharedEventGroupId = sharedEventGroupId;
+				}
 				if (savedDraft.pairedTokutenItemIds.includes(candidate.id)) {
 					if (!candidate.pairedTokutenItemIds.includes(savedDraft.id)) {
 						candidate.pairedTokutenItemIds.push(savedDraft.id);
@@ -342,6 +379,9 @@ export function createItemEditorController(options: ItemEditorOptions) {
 			const booths = selectedLane()?.booths ?? [];
 			return Object.fromEntries(booths.map((booth) => [booth, boothRepeatNames[booth] ?? repeatNamesText]));
 		},
+		get sharedEventItemIds() {
+			return sharedEventItemIds;
+		},
 		get multiBoothPreview() {
 			const multi = multiBoothInput();
 			return multi?.copyAcrossBooths ? buildMultiBoothRepeat(multi).preview : [];
@@ -401,6 +441,7 @@ export function createItemEditorController(options: ItemEditorOptions) {
 		close,
 		duplicate,
 		togglePair,
+		toggleSharedEventItem,
 		save,
 		remove
 	};

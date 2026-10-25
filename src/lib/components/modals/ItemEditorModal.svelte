@@ -4,6 +4,7 @@
 	import ModalShell from '$lib/components/ModalShell.svelte';
 	import IntervalDelta from '$lib/components/IntervalDelta.svelte';
 	import NumberDelta from '$lib/components/NumberDelta.svelte';
+	import ItemTreePicker from '$lib/components/ItemTreePicker.svelte';
 	import type { RepeatPreviewEntry } from '$lib/features/scheduler/repeat-items';
 	import type { BoothRepeatPreviewGroup } from '$lib/features/scheduler/multi-booth-repeat';
 
@@ -11,6 +12,7 @@
 		draft = $bindable<ScheduleItem>(),
 		isNew,
 		lanes,
+		sharedEventItemIds,
 		relatedLaneId,
 		relatedDelay,
 		customRelatedDelay,
@@ -52,6 +54,7 @@
 		onBoothOffsetsChange,
 		onRemoveBoothOffset,
 		onTogglePair,
+		onToggleSharedEventItem,
 		onClose,
 		onDelete,
 		onDuplicate,
@@ -60,6 +63,7 @@
 		draft?: ScheduleItem;
 		isNew: boolean;
 		lanes: Lane[];
+		sharedEventItemIds: string[];
 		relatedLaneId: string;
 		relatedDelay: string;
 		customRelatedDelay: number;
@@ -101,6 +105,7 @@
 		onBoothOffsetsChange: (value: number[]) => void;
 		onRemoveBoothOffset: (index: number) => void;
 		onTogglePair: (id: string) => void;
+		onToggleSharedEventItem: (id: string) => void;
 		onClose: () => void;
 		onDelete: () => void;
 		onDuplicate: () => void;
@@ -133,8 +138,8 @@
 <ModalShell className="editor-modal" labelledBy="edit-title" {onClose}>
 	<ModalHeader eyebrow={isNew ? '新規項目' : '項目を編集'} title={draft.artistLabel || '新しい項目'} titleId="edit-title" closeLabel={closeLabel} {onClose} />
 	<div class="form-grid">
-		{#if isNew}<div class="item-destination-row" class:destination-only={!hasMultipleBooths}><label class="item-destination-field">追加先レーン<select value={draft.laneId} disabled={destinationLocked} onchange={(event) => onDestinationLaneChange((event.currentTarget as HTMLSelectElement).value)}><option value="">選択してください</option>{#each lanes as lane (lane.id)}<option value={lane.id}>{lane.name}（{laneTypeLabel(lane.type)}）</option>{/each}</select>{#if destinationLocked}<span class="field-hint">ドラッグしたレーンへ追加します</span>{/if}</label>{#if hasMultipleBooths}<label class="item-booth-field">ブース<select bind:value={draft.boothId}>{#each currentLane()?.booths ?? [] as booth (booth)}<option value={booth}>{booth}</option>{/each}</select></label>{/if}</div>{/if}
-		<label>アーティスト<input bind:value={draft.artistLabel} /></label>{#if !isNew && hasMultipleBooths}<label class="item-booth-field">ブース<select bind:value={draft.boothId}>{#each currentLane()?.booths ?? [] as booth (booth)}<option value={booth}>{booth}</option>{/each}</select></label>{/if}<label class:wide-field={!isNew && hasMultipleBooths}>サブコンテンツ<input bind:value={draft.subContent} /></label>
+		<div class="item-destination-row" class:destination-only={!hasMultipleBooths}><label class="item-destination-field">{isNew ? '追加先レーン' : '会場'}<select value={draft.laneId} disabled={destinationLocked} onchange={(event) => onDestinationLaneChange((event.currentTarget as HTMLSelectElement).value)}><option value="">選択してください</option>{#each lanes as lane (lane.id)}<option value={lane.id}>{lane.name}（{laneTypeLabel(lane.type)}）</option>{/each}</select>{#if destinationLocked}<span class="field-hint">ドラッグしたレーンへ追加します</span>{/if}</label>{#if hasMultipleBooths}<label class="item-booth-field">ブース<select bind:value={draft.boothId}>{#each currentLane()?.booths ?? [] as booth (booth)}<option value={booth}>{booth}</option>{/each}</select></label>{/if}</div>
+		<label>アーティスト<input bind:value={draft.artistLabel} /></label><label class:wide-field={hasMultipleBooths}>サブコンテンツ<input bind:value={draft.subContent} /></label>
 		<label>開始時刻<span class="time-input-row"><input value={formatMinute(draft.startMinute)} onblur={(event) => normalizeTime(event, (value) => (draft.startMinute = minuteFromText(value)))} /><IntervalDelta value={draft.startMinute} onChange={(value) => (draft.startMinute = value)} /></span></label>
 		<label><span>終了時刻 <span class="item-duration">（+ {itemDuration()}分）</span></span><span class="time-input-row"><input value={formatMinute(draft.endMinute)} onblur={(event) => normalizeTime(event, (value) => (draft.endMinute = minuteFromText(value)))} /><IntervalDelta value={draft.endMinute} onChange={(value) => (draft.endMinute = value)} /></span></label>
 	</div>
@@ -153,7 +158,8 @@
 	{#if !isNew}<div class="favorite-editor"><span>お気に入り</span>{#each [0, 1, 2, 3] as level (level)}<button class:active={draft.favoriteLevel === level} onclick={() => (draft.favoriteLevel = level as 0 | 1 | 2 | 3)}>♥{level}</button>{/each}</div>{/if}
 	<details class="related-entry" open={relatedOpen} ontoggle={(event) => (relatedOpen = (event.currentTarget as HTMLDetailsElement).open)}><summary><span>{relatedLabel}</span><small>{relatedOpen ? 'オン' : 'オフ'}</small></summary><fieldset class="pairing-field related-event-field"><legend class="visually-hidden">{relatedLabel}</legend>
 		{#if isNew}<p class="field-note">保存時に、指定したレーンへ同じ長さの関連イベントを追加します。</p><div class="form-grid related-event-create"><label>追加先レーン<select value={relatedLaneId} onchange={(event) => onRelatedLaneChange((event.currentTarget as HTMLSelectElement).value)}><option value="">追加しない</option>{#each lanes as lane (lane.id)}<option value={lane.id}>{lane.name}（{laneTypeLabel(lane.type)}）</option>{/each}<optgroup label="新しいレーンを追加">{#each laneTypes as type}<option value={`new:${type}`}>＋ 新しい{laneTypeLabel(type)}</option>{/each}</optgroup></select></label><label>開始タイミング<select value={relatedDelay} disabled={!relatedLaneId} onchange={(event) => onRelatedDelayChange((event.currentTarget as HTMLSelectElement).value)}>{#each delays as minutes (minutes)}<option value={minutes}>{minutes === 0 ? '終演後' : `${minutes}分後`}</option>{/each}<option value="custom">カスタム</option></select></label>{#if relatedDelay === 'custom'}<label>カスタム時間<span class="time-input-row"><select value={customRelatedDelay} disabled={!relatedLaneId} onchange={(event) => onCustomRelatedDelayChange(Number((event.currentTarget as HTMLSelectElement).value))}>{#each customDelays as minutes (minutes)}<option value={minutes}>{minutes}分後</option>{/each}</select><IntervalDelta value={customRelatedDelay} min={25} max={180} onChange={onCustomRelatedDelayChange} label="カスタム時間を5分ずつ調整" /></span></label>{/if}</div>{/if}
-		<details class="existing-event-picker" open><summary>既存のイベントを関連付ける</summary><div class="pairing-list">{#each lanes as lane (lane.id)}{@const laneItems = relatedItemsForLane(lane)}{#if laneItems.length}<details class="related-lane-group" open={shouldExpandRelatedBranch(laneItems)}><summary><span>{lane.name}</span><small>{laneItems.length}件</small></summary><div class="related-lane-items">{#if lane.booths?.length}{#each lane.booths as booth (booth)}{@const boothItems = relatedItemsForBooth(lane, booth)}{#if boothItems.length}<details class="related-booth-group" open={shouldExpandRelatedBranch(boothItems)}><summary>{booth}</summary><div class="related-booth-items">{#each boothItems as item (item.id)}<label><input type="checkbox" checked={draft.pairedTokutenItemIds.includes(item.id)} onchange={() => onTogglePair(item.id)} /><span>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span><strong>{item.artistLabel}</strong></label>{/each}</div></details>{/if}{/each}{:else}{#each laneItems as item (item.id)}<label><input type="checkbox" checked={draft.pairedTokutenItemIds.includes(item.id)} onchange={() => onTogglePair(item.id)} /><span>{formatMinute(item.startMinute)}–{formatMinute(item.endMinute)}</span><strong>{item.artistLabel}</strong></label>{/each}{/if}</div></details>{/if}{/each}</div></details>
+		<details class="existing-event-picker" open><summary>既存のイベントを関連付ける</summary><ItemTreePicker {lanes} selectedItemIds={draft.pairedTokutenItemIds} itemsForLane={relatedItemsForLane} itemsForBooth={relatedItemsForBooth} shouldExpandBranch={shouldExpandRelatedBranch} {formatMinute} onToggle={onTogglePair} /></details>
 	</fieldset></details>
+	<details class="related-entry"><summary><span>同時開催グループ</span><small>{sharedEventItemIds.length ? `${sharedEventItemIds.length}件` : '未設定'}</small></summary><p class="field-note">同時に実施する別レーンの項目を選択します。選択した項目は、保存時にこの項目のグループへ移動します。レーン内・同一ブースの重複は警告されます。</p><ItemTreePicker {lanes} selectedItemIds={sharedEventItemIds} itemsForLane={relatedItemsForLane} itemsForBooth={relatedItemsForBooth} shouldExpandBranch={shouldExpandRelatedBranch} {formatMinute} onToggle={onToggleSharedEventItem} /></details>
 	<div class="modal-actions"><button class="danger-button" onclick={onDelete}>{deleteLabel}</button>{#if !isNew}<button class="quiet-button" onclick={onDuplicate}>{duplicateLabel}</button>{/if}<span></span><button class="quiet-button" onclick={onClose}>{cancelLabel}</button><button class="primary-button" onclick={onSave}>{applyLabel}</button></div>
 </ModalShell>

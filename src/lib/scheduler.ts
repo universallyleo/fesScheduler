@@ -59,6 +59,12 @@ export function normalizeArtistLabel(value: string): string {
 	return value.normalize('NFKC').trim().toLocaleLowerCase();
 }
 
+function isSameSharedEventGroup(left: ScheduleItem, right: ScheduleItem): boolean {
+	const leftGroup = left.sharedEventGroupId?.trim();
+	const rightGroup = right.sharedEventGroupId?.trim();
+	return Boolean(leftGroup && rightGroup && leftGroup === rightGroup);
+}
+
 export function detectConflicts(items: ScheduleItem[]): ConflictReport {
 	const sameLane: [string, string][] = [];
 	const sameArtist: [string, string][] = [];
@@ -69,7 +75,10 @@ export function detectConflicts(items: ScheduleItem[]): ConflictReport {
 			if (!left || !right || !overlaps(left, right)) continue;
 			if (left.laneId === right.laneId && left.boothId === right.boothId)
 				sameLane.push([left.id, right.id]);
-			if (normalizeArtistLabel(left.artistLabel) === normalizeArtistLabel(right.artistLabel)) {
+			if (
+				normalizeArtistLabel(left.artistLabel) === normalizeArtistLabel(right.artistLabel) &&
+				!isSameSharedEventGroup(left, right)
+			) {
 				sameArtist.push([left.id, right.id]);
 			}
 		}

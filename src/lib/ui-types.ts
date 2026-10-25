@@ -8,19 +8,11 @@ export type DragState = {
 	itemId: string;
 	originY: number;
 	startMinute: number;
-	limitMinute: number;
 	pointerId: number;
 	direction: 'up' | 'down';
 	selectedItemIds: string[];
 	endMinute: number;
 	resolution: ItemDropResolution | null;
-} | null;
-
-export type LaneResizeState = {
-	laneId: string;
-	originX: number;
-	startWidth: number;
-	width: number;
 } | null;
 
 export type CreateState = {

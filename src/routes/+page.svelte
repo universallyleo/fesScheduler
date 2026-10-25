@@ -23,7 +23,6 @@
 	import RelatedItemsModal from '$lib/components/modals/RelatedItemsModal.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import FestivalControls from '$lib/components/FestivalControls.svelte';
-	import TimetableToolbar from '$lib/features/scheduler/TimetableToolbar.svelte';
 	import TimetableGrid from '$lib/features/scheduler/TimetableGrid.svelte';
 	import { createSchedulerSession } from '$lib/features/scheduler/scheduler-session.svelte';
 	import { createItemEditorController } from '$lib/features/scheduler/item-editor-controller.svelte';
@@ -32,6 +31,10 @@
 	import { effectiveLaneEndMinute } from '$lib/features/scheduler/lane-time-bounds';
 	import { createBulkEntryController } from '$lib/features/scheduler/bulk-entry-controller.svelte';
 	import { reorderLanes } from '$lib/features/scheduler/lane-order';
+	import {
+		canAdjustLaneDisplayWidth,
+		nextLaneBaseWidth
+	} from '$lib/features/scheduler/lane-width';
 	import { createTimetableSelectors } from '$lib/features/scheduler/timetable-selectors';
 	import { createTimetablePresentation } from '$lib/features/scheduler/timetable-presentation';
 	import { schedulerCopy, type SchedulerCopyKey } from '$lib/features/scheduler/scheduler-copy';
@@ -44,6 +47,7 @@
 	import type { FavoriteFilter, FestivalSettingsDraft } from '$lib/ui-types';
 	import type {
 		Festival,
+		Lane,
 		LaneType,
 		ScheduleItem,
 		UserPreferences
@@ -57,7 +61,7 @@
 		snapMinutes: 5,
 		timeZoom: 216,
 		laneWidthMode: 'type',
-		laneWidths: { stage: 152, tokuten: 152, event: 152 },
+		laneWidths: { stage: 140, tokuten: 140, event: 140 },
 		itemOverlapPolicy: 'cascade',
 		compactFavorites: false,
 		blockColorMode: 'full'
@@ -96,6 +100,7 @@
 	const editingItemId = $derived(itemEditor.itemId);
 	const editDraft = $derived(itemEditor.draft);
 	const editingItemIsNew = $derived(itemEditor.isNew);
+	const sharedEventItemIds = $derived(itemEditor.sharedEventItemIds);
 	const relatedLaneId = $derived(itemEditor.relatedLaneId);
 	const relatedDelay = $derived(itemEditor.relatedDelay);
 	const customRelatedDelay = $derived(itemEditor.customRelatedDelay);
@@ -126,11 +131,7 @@
 		openNew: itemEditor.openNew,
 		openRelated,
 		notify: flash,
-		reorderLanes: reorderSelectedDayLanes,
-		getLaneEndMinute: (lane) => {
-			const day = festival.days.find((candidate) => candidate.id === selectedDayId) ?? festival.days[0];
-			return day ? effectiveLaneEndMinute(lane, day) : 30 * 60;
-		}
+		reorderLanes: reorderSelectedDayLanes
 	});
 	const addLaneId = $derived(gridInteraction.addLaneId);
 	const creating = $derived(gridInteraction.creating);
@@ -162,6 +163,7 @@
 	let importOpen = $state(false);
 	let importText = $state('');
 	const selectedSampleId = $derived(session.selectedSampleId);
+	const savedFestivals = $derived(session.savedFestivals);
 	const bulkOpen = $derived(bulkEntry.open);
 	const bulkRowsText = $derived(bulkEntry.rowsText);
 	const bulkStartText = $derived(bulkEntry.startText);
@@ -313,6 +315,7 @@
 		draggingItemId: gridInteraction.draggingItemId
 	}));
 	const {
+		displayedItem,
 		itemHasLimitedContent,
 		shouldShowItemBottomLine,
 		itemStyle,
@@ -393,6 +396,22 @@
 
 	function updateFestival(mutator: (next: Festival) => void): void {
 		session.updateFestival(mutator);
+	}
+	function adjustLaneWidth(laneId: string, displayedGridWidth: number, direction: -1 | 1): void {
+		const lane = lanes.find((candidate) => candidate.id === laneId);
+		if (!lane) return;
+		const currentWidth = laneDisplayWidth(lane);
+		if (!canAdjustLaneDisplayWidth(lane, currentWidth, displayedGridWidth, direction)) return;
+		const nextWidth = nextLaneBaseWidth(lane, currentWidth, direction);
+		if (preferences.laneWidthMode === 'type') {
+			preferences.laneWidths[lane.type] = nextWidth;
+			session.persistPreferences();
+			return;
+		}
+		updateFestival((next) => {
+			const target = next.days.flatMap((candidate) => candidate.lanes).find((candidate) => candidate.id === lane.id);
+			if (target) target.width = nextWidth;
+		});
 	}
 	function reorderSelectedDayLanes(sourceId: string, targetId: string): void {
 		updateFestival((next) => {
@@ -484,9 +503,15 @@
 	function copyTemplate(templateId: string): void {
 		session.copyTemplate(templateId);
 	}
-	async function removeFestival(): Promise<void> {
-		if (!window.confirm('このローカル timetable を削除しますか？')) return;
-		await session.removeFestival();
+	function resetFestival(): void {
+		if (!window.confirm('現在のタイムテーブルをリセットしますか？')) return;
+		session.resetCurrentFestival();
+		favoriteFilter = 0;
+	}
+
+	function deleteSavedFestival(id: string, title: string): void {
+		if (!window.confirm(`「${title}」をこの端末から削除しますか？`)) return;
+		void session.deleteSavedFestival(id);
 	}
 
 	function downloadExport(): void {
@@ -574,25 +599,29 @@
 {:else}
 	<div class="app-shell">
 		<AppHeader
+			{festival}
 			bundledFestivals={BUNDLED_FESTIVALS}
+			{savedFestivals}
 			{selectedSampleId}
 			timetableLabel={t('timetable')}
 			savedLabel={t('saved')}
-			themeLabel={t('theme')}
-			lightThemeLabel={t('lightTheme')}
-			openSampleLabel={t('openSample')}
 			{preferences}
+			bind:searchQuery bind:settingsOpen bind:importOpen
+			{t}
 			onToggleTheme={session.toggleTheme}
 			onToggleLanguage={session.toggleLanguage}
 			onSelectSample={copyTemplate}
+			onOpenSaved={session.openSavedFestival}
+			onDeleteSaved={deleteSavedFestival}
+			onNewFestival={newFestival}
+			onResetFestival={resetFestival}
+			savePreferences={session.persistPreferences}
+			{adjustTimeZoom} {downloadExport} {shareExport}
 		/>
 		<main class="app-main">
 			<FestivalControls
-				title={festival.title}
-				timezone={festival.timezone}
 				days={festival.days}
 				{selectedDayId}
-				newFestivalLabel={t('newFestival')}
 				addDayLabel={t('addDay')}
 				formatDay={(festivalDay) =>
 					new Intl.DateTimeFormat(preferences.language === 'ja' ? 'ja-JP' : 'en-US', {
@@ -601,20 +630,14 @@
 						weekday: 'short',
 						timeZone: festival.timezone
 					}).format(new Date(`${festivalDay.date}T12:00:00`))}
-				onNewFestival={newFestival}
-				onRemoveFestival={removeFestival}
 				onSelectDay={selectDay}
 				onAddDay={session.addDay}
-			/>
-			<TimetableToolbar
-				bind:favoriteFilter bind:searchQuery bind:settingsOpen bind:importOpen
-				{preferences} {t} savePreferences={session.persistPreferences} {setFavoriteFilter} {adjustTimeZoom} {downloadExport} {shareExport}
 			/>
 			{#if conflictDetails.length}<section
 					class="warning-bar"
 					aria-live="polite"
 				>
-					<strong>!</strong><details open>
+					<strong>!</strong><details>
 						<summary>{conflictDetails.length}件の重複があります。内容を確認してください。</summary>
 						<ul class="conflict-list">
 							{#each conflictDetails as conflict (`${conflict.left.id}:${conflict.right.id}`)}
@@ -629,7 +652,7 @@
 					</details>
 				</section>{/if}
 			<TimetableGrid
-				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} beginLaneResize={gridInteraction.beginLaneResize} updateLaneResize={gridInteraction.updateLaneResize} finishLaneResize={gridInteraction.finishLaneResize} laneResizePreview={gridInteraction.laneResizePreview} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {selectedItemIds} {multiSelectEnabled} onToggleEdit={toggleEditMode} {openFestivalSettings} openOverlapSettings={() => (overlapPolicyOpen = true)} setMultiSelectEnabled={gridInteraction.setMultiSelectEnabled} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} {activateItem} {deleteItem} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth}
+				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} onLaneWidthAdjust={adjustLaneWidth} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {displayedItem} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {selectedItemIds} {multiSelectEnabled} onToggleEdit={toggleEditMode} {openFestivalSettings} openOverlapSettings={() => (overlapPolicyOpen = true)} setMultiSelectEnabled={gridInteraction.setMultiSelectEnabled} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} {activateItem} {deleteItem} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth} setFavoriteFilter={setFavoriteFilter}
 				onOpenLaneEditor={laneEditor.open}
 				onOpenLaneInfo={(lane) => (infoLaneId = lane.id)}
 			/>
@@ -662,6 +685,7 @@
 		draft={editDraft}
 		isNew={editingItemIsNew}
 		{lanes}
+		{sharedEventItemIds}
 		{relatedLaneId}
 		{relatedDelay}
 		{customRelatedDelay}
@@ -703,6 +727,7 @@
 		onBoothOffsetsChange={itemEditor.setBoothOffsets}
 		onRemoveBoothOffset={itemEditor.removeBoothOffset}
 		onTogglePair={itemEditor.togglePair}
+		onToggleSharedEventItem={itemEditor.toggleSharedEventItem}
 		onClose={itemEditor.close}
 		onDelete={itemEditor.remove}
 		onDuplicate={() => itemEditor.duplicate(editDraft)}

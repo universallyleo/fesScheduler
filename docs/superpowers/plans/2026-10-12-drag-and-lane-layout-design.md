@@ -19,7 +19,7 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
 - `表示設定` stores one persistent item-overlap policy:
   1. `重ねる（警告）`: retain the placement and report a conflict.
   2. `空きブースへ移動`: choose a booth in the same multi-booth lane that has no interval overlap. If no booth is available, retain the current booth and report the conflict.
-  3. `前後をずらす`: resolve on release. A downward move pushes every collided and later item in the same sublane down by the final overlap amount; an upward move pushes every collided and earlier item up by that amount. Downward movement clamps at 30:00; upward movement clamps at the lane's opening time when available, otherwise 00:00.
+  3. `前後をずらす`: resolve on release. A downward move pushes every collided and later item in the same sublane down by the final overlap amount; an upward move pushes every collided and earlier item up by that amount. Item dragging always clamps to 00:00–30:00, independently of festival and venue opening or closing times. Opening time remains display metadata only.
 - Dragging an item uses a temporary preview, rather than writing the festival on every pointer move. The drag state is committed in a single mutation on release, producing one undo step and avoiding pointer lag.
 - While dragged, the active item is above every other item in its lane. After release, non-overlapping cards have the same z-index. Overlapping cards use a small local order: later-starting overlapping cards appear above earlier cards, exactly as multi-booth cards do. Headers remain above cards; settings and floating edit/current-time controls remain above headers.
 - Item-card content order is start time, main content, optional subcontent, then end time on the final line.
@@ -90,7 +90,7 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
 
 ## Verification
 
-- Unit-test collision resolution for overlap, free-booth selection, upward/downward cascades, opening/00:00/30:00 clamps, and no-free-booth fallback.
+- Unit-test collision resolution for overlap, free-booth selection, upward/downward cascades, 00:00/30:00 clamps, and no-free-booth fallback.
 - Unit-test divider resizing in both scope modes, width inheritance, and proportional multi-booth layout.
 - Unit-test the controller so it updates preview during movement and commits only once on release.
 - Run `bun run check`, the full unit suite, a production build, and the existing Playwright suite when the browser runtime is available.

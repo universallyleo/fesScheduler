@@ -86,7 +86,7 @@
 	.update-prompt {
 		position: fixed;
 		right: 16px;
-		bottom: 16px;
+		bottom: 72px;
 		z-index: 50;
 		display: flex;
 		align-items: center;

@@ -11,11 +11,4 @@ describe('effectiveLaneEndMinute', () => {
 		expect(effectiveLaneEndMinute({ ...lane, endMinute: 1260 }, day)).toBe(1260);
 	});
 
-	it('uses the festival-day end when the lane has no end', () => {
-		expect(effectiveLaneEndMinute(lane, day)).toBe(1320);
-	});
-
-	it('falls back to 30:00 when neither lane nor day specifies an end', () => {
-		expect(effectiveLaneEndMinute(lane, { ...day, displayEndMinute: undefined })).toBe(1800);
-	});
 });

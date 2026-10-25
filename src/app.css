@@ -728,7 +728,7 @@ select {
 	display: flex;
 	align-items: flex-end;
 	gap: 6px;
-	min-width: var(--lane-width);
+	min-width: 0;
 	padding: 10px 9px 9px;
 	background: color-mix(in srgb, var(--lane-color) 70%, var(--surface-lane-header));
 	color: var(--lane-icon, var(--text-lane));
@@ -781,23 +781,26 @@ select {
 .lane-header .lane-move-grip:active {
 	cursor: grabbing;
 }
-.lane-header .lane-resize-handle {
+.lane-width-controls {
 	position: absolute;
-	top: 0;
-	right: -7px;
-	bottom: 0;
-	z-index: 5;
-	width: 14px;
-	padding: 0;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
-	cursor: col-resize;
-	touch-action: none;
+	top: 5px;
+	right: 5px;
+	display: flex;
+	gap: 2px;
 }
-.lane-header .lane-resize-handle:hover,
-.lane-header .lane-resize-handle:focus-visible {
-	background: color-mix(in srgb, var(--teal) 35%, transparent);
+.lane-header .lane-width-controls button {
+	width: 17px;
+	height: 17px;
+	padding: 0;
+	border: 1px solid color-mix(in srgb, currentColor 50%, transparent);
+	border-radius: 3px;
+	background: color-mix(in srgb, var(--surface-lane-header) 58%, transparent);
+	color: inherit;
+	font: 800 13px/1 ui-sans-serif, system-ui, sans-serif;
+}
+.lane-header .lane-width-controls button:hover:not(:disabled),
+.lane-header .lane-width-controls button:focus-visible:not(:disabled) {
+	background: color-mix(in srgb, currentColor 18%, transparent);
 	filter: none;
 }
 .lane-reorder-destination {
@@ -870,7 +873,7 @@ select {
 }
 .lane-column {
 	position: relative;
-	min-width: var(--lane-width);
+	min-width: 0;
 	overflow: visible;
 	border-right: 1px solid var(--line-lane);
 	background: color-mix(
@@ -950,15 +953,6 @@ select {
 	color: var(--item-text, var(--item-text-fallback));
 	text-align: left;
 	box-shadow: 0 1px 4px var(--shadow-block);
-	transition:
-		filter 0.12s ease,
-		opacity 0.12s ease,
-		box-shadow 0.12s ease;
-}
-.schedule-block:hover,
-.schedule-block:focus-visible {
-	filter: saturate(1.1) brightness(1.03);
-	box-shadow: 0 4px 11px var(--shadow-block-hover);
 }
 .schedule-block.partial-color {
 	border: 1px solid color-mix(in srgb, var(--item-color) 55%, var(--partial-item-border));
@@ -985,25 +979,8 @@ select {
 		monospace;
 	opacity: 0.86;
 }
-.item-favorite {
-	position: absolute;
-	top: 3px;
-	right: 3px;
-	display: inline-flex;
-	align-items: center;
-	gap: 1px;
-	padding: 0 2px 1px;
-	border-radius: 4px;
-	background: #fff;
-	color: var(--favorite);
-	font-family: ui-sans-serif, system-ui, sans-serif;
-	font-weight: 800;
-	line-height: 1;
-}
-.schedule-block.editing .item-favorite { right: 21px; }
-.favorite-heart {
-	font-size: 12px;
-	line-height: 1;
+.item-favorite-toggle {
+	display: none;
 }
 .favorite-level {
 	font-size: 9px;
@@ -1019,6 +996,22 @@ select {
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 3;
 	line-clamp: 3;
+}
+.schedule-block.multi-booth-dense .item-main-content {
+	display: block;
+	align-self: flex-start;
+	inline-size: calc(100% - 28px);
+	max-block-size: 100%;
+	margin-top: 3px;
+	overflow-wrap: anywhere;
+	word-break: break-all;
+	font-size: clamp(11px, 1vw, 15px);
+	line-height: 1.1;
+	text-orientation: upright;
+	white-space: normal;
+	writing-mode: vertical-rl;
+	-webkit-line-clamp: unset;
+	line-clamp: unset;
 }
 .schedule-block:has(.item-booth-select) strong {
 	font-size: clamp(10px, 1vw, 14px);
@@ -1895,6 +1888,7 @@ select {
 	font-size: 10px;
 }
 .pairing-list strong {
+	color: var(--ink);
 	overflow: hidden;
 	font-size: 12px;
 	text-overflow: ellipsis;
@@ -2131,6 +2125,52 @@ select {
 	.creation-preview {
 		font-size: 12px;
 	}
+	.item-favorite-toggle {
+		position: absolute;
+		top: 3px;
+		right: 3px;
+		display: inline-flex;
+		align-items: center;
+		gap: 1px;
+		min-width: 17px;
+		min-height: 17px;
+		padding: 0 2px;
+		border: 0;
+		border-radius: 4px;
+	background: transparent;
+		color: var(--favorite);
+		font-family: ui-sans-serif, system-ui, sans-serif;
+		font-size: 12px;
+		font-weight: 800;
+		line-height: 1;
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-tap-highlight-color: transparent;
+		touch-action: manipulation;
+	}
+	.item-favorite-toggle.active {
+		background: #fff;
+		color: var(--favorite);
+	}
+	.schedule-block.editing .item-favorite-toggle {
+		right: 21px;
+	}
+	/* Each booth card tracks its parent lane width. Once a booth is narrower
+	   than the xx:xx time label, reserve separate rows for the card actions. */
+	.schedule-block.multi-booth-tight .item-favorite-toggle {
+		top: 17px;
+		right: 3px;
+	}
+	.schedule-block.multi-booth-tight .item-main-content {
+		margin-top: 21px;
+	}
+	.schedule-block.multi-booth-tight.editing .item-delete-button {
+		top: 35px;
+		right: 3px;
+	}
+	.schedule-block.multi-booth-tight.editing .item-main-content {
+		margin-top: 39px;
+	}
 	.schedule-block small {
 		font-size: 12px;
 	}
@@ -2139,10 +2179,173 @@ select {
 		font-size: 14px;
 	}
 }
+/* Wide-screen festival controls: one 100px header with a quiet two-row action tray. */
+@media (min-width: 781px) {
+	.app-header { position: relative; display: grid; grid-template-columns: auto minmax(230px, 1fr) minmax(210px, 0.85fr) auto; align-items: center; gap: 14px; min-height: 88px; padding: 0 clamp(18px, 4vw, 56px); }
+	.brand-lockup { align-self: stretch; padding-left: 10px; border-left: 4px solid var(--teal); }
+	.brand-lockup > div:last-child { display: flex; flex-direction: column; justify-content: center; }
+	.brand-lockup .eyebrow { margin-bottom: 7px; }
+	.brand-lockup h1 { margin: 0; }
+	.festival-identity { align-self: stretch; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+	.festival-identity h2 { margin: 0; overflow: hidden; font-size: clamp(20px, 2.1vw, 30px); line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+	.festival-identity .eyebrow { margin: 8px 0 0; }
+	.header-search { min-width: 0; width: 100%; }
+	.header-search input { width: 100%; }
+	.header-action-tray { align-self: center; display: grid; grid-template-columns: minmax(130px, 1fr) 42px; grid-template-rows: 37px 37px; gap: 4px; padding: 5px 0; border-radius: 0; background: transparent; }
+	.header-action-tray > * { min-width: 0; }
+	.header-menu, .header-action-tray .settings-menu { position: relative; }
+	.header-action-button { box-sizing: border-box; width: 100%; height: 100%; padding: 0 7px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; }
+	.header-action-button:hover, .header-action-button:focus-visible, .header-action-button.active, .header-action-primary { background: var(--panel); color: var(--teal); box-shadow: 0 1px 3px var(--shadow-soft); }
+	.header-icon-button { padding: 0; font-size: 15px; }
+	.header-menu-panel, .header-settings-panel { position: absolute; top: calc(100% + 7px); right: 0; z-index: 510; min-width: 250px; padding: 7px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); box-shadow: 0 12px 28px var(--shadow-toast); }
+	.header-menu-panel button { display: block; width: 100%; padding: 8px 9px; border: 0; border-radius: 5px; background: transparent; color: var(--ink); text-align: left; font: inherit; }
+	.header-menu-panel button:hover, .header-menu-panel button.active { background: var(--surface-selected); color: var(--teal); }
+	.saved-festival-menu-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 3px; }
+	.header-menu-panel .saved-festival-delete { width: auto; padding-inline: 6px; color: var(--danger); font-size: 11px; }
+	.header-menu-panel .saved-festival-delete:hover, .header-menu-panel .saved-festival-delete:focus-visible { background: var(--danger-surface); color: var(--danger); }
+	.header-menu-panel details { margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--line); }
+	.header-menu-panel summary { padding: 6px 8px; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 800; }
+	.app-header > .save-state { display: none; }
+	.app-main { padding-top: 16px; }
+	.festival-strip { display: none; }
+}
+
+/* The corner is a control, while the frozen state belongs to the entire header row. */
+.schedule-corner { appearance: none; padding: 0; border: 0; cursor: pointer; font-size: 18px; }
+.schedule-corner:hover, .schedule-corner:focus-visible { color: var(--teal); }
+.frozen-headers .schedule-corner, .frozen-headers .lane-header { border-bottom: 3px solid var(--teal); }
+.schedule-grid:not(.frozen-headers) .schedule-corner, .schedule-grid:not(.frozen-headers) .lane-header { position: relative; top: auto; }
+.schedule-grid:not(.frozen-headers) .schedule-corner { left: auto; }
+.viewport-grid-header {
+	position: fixed;
+	top: 0;
+	z-index: 270;
+	overflow: hidden;
+	border-bottom: 3px solid var(--teal);
+	box-shadow: 0 3px 10px var(--shadow-soft);
+}
+.viewport-grid-header-grid {
+	grid-template-rows: var(--header-height);
+	min-width: max-content;
+	width: max-content;
+	will-change: transform;
+}
+.viewport-grid-header .schedule-corner,
+.viewport-grid-header .lane-header {
+	position: relative;
+	top: auto;
+	border-bottom: 0;
+}
+.viewport-grid-header .schedule-corner {
+	left: auto;
+}
+.viewport-lane-header {
+	justify-content: flex-end;
+}
+.viewport-lane-header strong,
+.viewport-lane-header small {
+	overflow: hidden;
+	max-width: 100%;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.page-top-button { position: fixed; right: 20px; bottom: 20px; z-index: 320; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); font-size: 11px; font-weight: 800; box-shadow: 0 6px 16px var(--shadow-toast); }
+.timetable-floating-controls { bottom: 68px; }
+.favorite-floating-control { position: relative; pointer-events: auto; }
+.favorite-floating-button { min-height: 32px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); font-size: 12px; font-weight: 800; box-shadow: 0 4px 10px var(--shadow-toast); }
+.favorite-filter-drawer { position: absolute; right: 0; bottom: calc(100% + 7px); display: flex; gap: 3px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 8px 20px var(--shadow-toast); }
+.favorite-filter-drawer button { min-width: 29px; min-height: 28px; padding: 4px 6px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 800; }
+.favorite-filter-drawer button.active { background: var(--surface-selected); color: var(--teal); }
+
+
 @media (max-width: 780px) {
 	.app-header {
-		align-items: flex-start;
-		padding: 14px 14px 12px;
+		display: grid;
+		grid-template-areas:
+			'brand identity tray'
+			'search search search';
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 10px;
+		padding: 12px 14px;
+	}
+	.brand-lockup {
+		grid-area: brand;
+		gap: 7px;
+	}
+	.brand-mark {
+		width: 32px;
+		height: 32px;
+		border-radius: 9px 3px 9px 3px;
+		font-size: 10px;
+	}
+	.brand-lockup .eyebrow {
+		font-size: 8px;
+	}
+	.brand-lockup h1 {
+		font-size: 15px;
+	}
+	.festival-identity {
+		grid-area: identity;
+		min-width: 0;
+	}
+	.festival-identity h2 {
+		margin: 0;
+		overflow: hidden;
+		font-size: 20px;
+		line-height: 1.1;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.festival-identity .eyebrow {
+		margin: 5px 0 0;
+		font-size: 8px;
+	}
+	.header-search {
+		grid-area: search;
+		width: 100%;
+	}
+	.header-action-tray {
+		grid-area: tray;
+		display: grid;
+		grid-template-columns: minmax(94px, 1fr) 30px;
+		grid-template-rows: 31px 31px;
+		gap: 3px;
+	}
+	.header-action-tray > * {
+		min-width: 0;
+	}
+	.header-menu,
+	.header-action-tray .settings-menu {
+		position: relative;
+	}
+	.header-action-button {
+		width: 100%;
+		height: 100%;
+		padding: 0 6px;
+		border: 1px solid var(--line);
+		border-radius: 5px;
+		background: var(--panel);
+		color: var(--muted);
+		font-size: 10px;
+		font-weight: 800;
+		white-space: nowrap;
+	}
+	.header-icon-button {
+		padding: 0;
+		font-size: 14px;
+	}
+	.header-menu-panel,
+	.header-settings-panel {
+		position: absolute;
+		top: calc(100% + 6px);
+		right: 0;
+		z-index: 510;
+		min-width: min(260px, calc(100vw - 28px));
+	}
+	.app-header > .save-state {
+		display: none;
 	}
 	.header-actions {
 		flex-wrap: wrap;
@@ -2199,10 +2402,6 @@ select {
 		bottom: 74px;
 		left: 10px;
 		width: auto;
-	}
-	.lane-header .lane-resize-handle {
-		right: -18px;
-		width: 44px;
 	}
 	.transfer-actions {
 		margin-left: auto;

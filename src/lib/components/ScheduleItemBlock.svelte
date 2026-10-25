@@ -3,6 +3,8 @@
 
 	let {
 		item,
+		displayStartMinute = item.startMinute,
+		displayEndMinute = item.endMinute,
 		style,
 		visible,
 		conflict,
@@ -14,6 +16,7 @@
 		bottomLine,
 		showBottomLine,
 		booths,
+		tightMultiBooth,
 		onCycleFavorite,
 		onOpenRelated,
 		onPointer,
@@ -22,6 +25,8 @@
 		onBoothChange
 	}: {
 		item: ScheduleItem;
+		displayStartMinute?: number;
+		displayEndMinute?: number;
 		style: string;
 		visible: boolean;
 		conflict: boolean;
@@ -33,6 +38,7 @@
 		bottomLine: string;
 		showBottomLine: boolean;
 		booths: string[];
+		tightMultiBooth: boolean;
 		onCycleFavorite: () => void;
 		onOpenRelated: () => void;
 		onPointer: (event: PointerEvent, kind: 'move' | 'resize') => void;
@@ -49,17 +55,19 @@
 	class:conflict
 	class:partial-color={partialColor}
 	class:compact-content={compactContent}
+	class:multi-booth-dense={item.itemType === 'tokuten' && booths.length > 2}
+	class:multi-booth-tight={tightMultiBooth}
 	class:editing
 	class:selected
 	class="schedule-block"
 	{style}
 	title={compactContent && item.subContent ? item.subContent : undefined}
-	aria-label={`${item.artistLabel} ${formatMinute(item.startMinute)}–${formatMinute(item.endMinute)}`}
-	onclick={() => (editing ? onEdit() : onCycleFavorite())}
+	aria-label={`${item.artistLabel} ${formatMinute(displayStartMinute)}–${formatMinute(displayEndMinute)}`}
+	onclick={() => (editing ? onEdit() : onOpenRelated())}
 	onkeydown={(event) => {
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault();
-			editing ? onEdit() : onCycleFavorite();
+			editing ? onEdit() : onOpenRelated();
 		}
 	}}
 	oncontextmenu={(event) => {
@@ -69,12 +77,26 @@
 	onpointerdown={(event) => onPointer(event, 'move')}
 	ondblclick={onEdit}
 >
-	<span class="item-time">{formatMinute(item.startMinute)}</span>
-	{#if item.favoriteLevel > 0}<span class="item-favorite"><span class="favorite-heart">♥</span><span class="favorite-level">{item.favoriteLevel}</span></span>{/if}
-	<strong>{item.artistLabel}</strong>
+	<span class="item-time">{formatMinute(displayStartMinute)}</span>
+	<button
+		class="item-favorite-toggle"
+		class:active={item.favoriteLevel > 0}
+		aria-label="お気に入りレベルを変更"
+		aria-pressed={item.favoriteLevel > 0}
+		onclick={(event) => {
+			event.stopPropagation();
+			onCycleFavorite();
+		}}
+		onpointerdown={(event) => event.stopPropagation()}
+		ondblclick={(event) => {
+			event.preventDefault();
+			event.stopPropagation();
+		}}
+	><span aria-hidden="true">{item.favoriteLevel > 0 ? `${item.favoriteLevel}♥` : '♡'}</span></button>
+	<strong class="item-main-content">{item.artistLabel}</strong>
 	{#if item.subContent && !compactContent}<small>{item.subContent}</small>{/if}
 	<footer class="item-footer">
-		<span class="item-end-time">{formatMinute(item.endMinute)}</span>
+		<span class="item-time item-end-time">{formatMinute(displayEndMinute)}</span>
 		{#if editing && booths.length > 1}
 			<select
 				class="item-booth-select"

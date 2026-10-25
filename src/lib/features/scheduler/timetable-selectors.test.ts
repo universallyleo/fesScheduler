@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createTimetableSelectors } from './timetable-selectors';
-import type { ScheduleItem } from '$lib/types';
+import type { Lane, ScheduleItem } from '$lib/types';
 
 const item = (id: string, artistLabel: string): ScheduleItem => ({
 	id,
@@ -14,6 +14,28 @@ const item = (id: string, artistLabel: string): ScheduleItem => ({
 });
 
 describe('related event suggestions', () => {
+	it('lists items in chronological order instead of their creation order', () => {
+		const lane: Lane = { id: 'event', name: 'イベント・インフォ', type: 'event', color: '#5c9ed6' };
+		const selectors = createTimetableSelectors(() => ({
+			items: [
+				{ ...item('created-last', '終演後案内'), laneId: 'event', startMinute: 660, endMinute: 690 },
+				{ ...item('created-first', 'Wristband交換'), laneId: 'event', startMinute: 540, endMinute: 570 },
+				{ ...item('same-time', '入場案内'), laneId: 'event', startMinute: 540, endMinute: 565 }
+			],
+			lanes: [lane],
+			searchNormalized: '',
+			favoriteFilter: 0,
+			editDraft: null,
+			artistDirectory: []
+		}));
+
+		expect(selectors.relatedItemsForLane(lane).map((candidate) => candidate.id)).toEqual([
+			'same-time',
+			'created-first',
+			'created-last'
+		]);
+	});
+
 	it('expands a lane for a partial normalized artist-name match', () => {
 		const draft = item('draft', 'MaryCrown');
 		const selectors = createTimetableSelectors(() => ({

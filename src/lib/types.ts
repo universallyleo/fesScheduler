@@ -36,6 +36,8 @@ export interface ScheduleItem {
 	boothId?: string;
 	itemType?: LaneType;
 	color?: string;
+	/** Identifies intentionally simultaneous copies of one shared event. */
+	sharedEventGroupId?: string;
 	artistEntityIds: string[];
 	favoriteLevel: 0 | 1 | 2 | 3;
 	pairedTokutenItemIds: string[];

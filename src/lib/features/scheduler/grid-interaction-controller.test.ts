@@ -19,12 +19,14 @@ function createFixture({
 	editing = true,
 	compact = false,
 	items = [],
-	laneWidthMode = 'type' as const
+	laneWidthMode = 'type' as const,
+	laneEndMinute
 }: {
 	editing?: boolean;
 	compact?: boolean;
 	items?: ScheduleItem[];
 	laneWidthMode?: UserPreferences['laneWidthMode'];
+	laneEndMinute?: number;
 } = {}) {
 	const opened: { laneId: string; startMinute: number; endMinute: number; lockDestination: boolean }[] = [];
 	const reordered: [string, string][] = [];
@@ -36,7 +38,7 @@ function createFixture({
 	};
 	let festival: Festival = {
 		id: 'festival', title: 'Test', timezone: 'Asia/Tokyo', artistDirectory: [], updatedAt: '',
-		days: [{ id: 'day', date: '2026-10-11', lanes: [{ id: 'lane-a', name: 'A', type: 'stage' }], items }]
+		days: [{ id: 'day', date: '2026-10-11', lanes: [{ id: 'lane-a', name: 'A', type: 'stage', endMinute: laneEndMinute }], items }]
 	};
 	const controller = createGridInteractionController({
 		getEditMode: () => editing,
@@ -117,35 +119,24 @@ describe('grid item creation', () => {
 		expect(getFestival().days[0]?.items[0]).toMatchObject({ startMinute: 610, endMinute: 630 });
 	});
 
-	it('does not begin lane resize or reorder outside edit mode', () => {
+	it('ignores lane and festival closing limits while dragging', () => {
+		const moving = scheduledItem('moving', 1190, 1210);
+		const { controller } = createFixture({ items: [moving], laneEndMinute: 1200 });
+
+		controller.beginItemPointer(createPointerEvent(), moving, 'move');
+		controller.handlePointerMove(createPointerEvent({ clientY: 30 }));
+
+		expect(controller.itemDragPreview?.patches).toEqual([
+			{ id: 'moving', startMinute: 1200, endMinute: 1220 }
+		]);
+	});
+
+	it('does not begin lane reorder outside edit mode', () => {
 		const { controller } = createFixture({ editing: false });
 
-		controller.beginLaneResize(createPointerEvent(), 'lane-a');
 		controller.beginLaneReorder(createPointerEvent(), 'lane-a');
 
-		expect(controller.laneResizePreview).toBeNull();
 		expect(controller.reorderingLaneId).toBeNull();
-	});
-
-	it('changes each lane type width through a divider drag in type mode', () => {
-		const { controller, preferences } = createFixture();
-
-		controller.beginLaneResize(createPointerEvent(), 'lane-a');
-		controller.updateLaneResize(createPointerEvent({ clientX: 30 }));
-		controller.finishLaneResize();
-
-		expect(preferences.laneWidths.stage).toBe(170);
-	});
-
-	it('writes one lane override through a divider drag in individual mode', () => {
-		const { controller, getFestival, preferences } = createFixture({ laneWidthMode: 'individual' });
-
-		controller.beginLaneResize(createPointerEvent(), 'lane-a');
-		controller.updateLaneResize(createPointerEvent({ clientX: 30 }));
-		controller.finishLaneResize();
-
-		expect(preferences.laneWidths.stage).toBe(140);
-		expect(getFestival().days[0]?.lanes[0]?.width).toBe(170);
 	});
 
 	it('locks multi-selection to the first selected lane and toggles selected items', () => {
