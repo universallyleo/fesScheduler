@@ -15,6 +15,8 @@ function overlaps(left: ScheduleItem, right: ScheduleItem): boolean {
 
 type PresentationContext = {
 	items: ScheduleItem[];
+	visibleItems?: ScheduleItem[];
+	filterActive?: boolean;
 	preferences: UserPreferences;
 	compactActive: boolean;
 	minuteToY: (minute: number) => number;
@@ -25,6 +27,18 @@ type PresentationContext = {
 };
 
 export function createTimetablePresentation(context: () => PresentationContext) {
+	function visibleBoothsForLane(lane: Lane): string[] {
+		const booths = lane.type === 'tokuten' ? lane.booths ?? [] : [];
+		if (!context().filterActive) return booths;
+		const visibleItems = context().visibleItems ?? [];
+		return booths.filter((booth) =>
+			visibleItems.some(
+				(item) =>
+					item.laneId === lane.id && (item.boothId ?? booths[0]) === booth
+			)
+		);
+	}
+
 	function previewedItem(item: ScheduleItem): ScheduleItem {
 		const patch = context().dragPreview?.patches.find((candidate) => candidate.id === item.id);
 		return patch ? { ...item, ...patch } : item;
@@ -58,7 +72,7 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 			item.itemType === 'tokuten' || (!item.itemType && lane?.type === 'tokuten')
 				? 'var(--tokuten-item-text)'
 				: readableTextColor(item.color ?? lane?.color ?? '#a8adb5');
-		const booths = !compactActive && lane?.type === 'tokuten' ? lane.booths ?? [] : [];
+		const booths = !compactActive && lane ? visibleBoothsForLane(lane) : [];
 		const boothIndex = booths.length ? Math.max(0, booths.indexOf(displayed.boothId ?? booths[0] ?? '')) : 0;
 		const boothWidth = booths.length > 1 ? 1 / booths.length : 1;
 		const boothLeft = booths.length > 1 ? boothIndex / booths.length : 0;
@@ -96,6 +110,7 @@ export function createTimetablePresentation(context: () => PresentationContext) 
 		displayedItemHeight,
 		itemHasLimitedContent,
 		shouldShowItemBottomLine,
+		visibleBoothsForLane,
 		itemStyle,
 		laneStyle,
 		laneDisplayWidth

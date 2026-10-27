@@ -72,6 +72,7 @@
 		itemForLane: (laneId: string) => ScheduleItem[];
 		laneStyle: (lane: Lane) => string;
 		laneDisplayWidth: (lane: Lane) => number;
+		visibleBoothsForLane: (lane: Lane) => string[];
 		onOpenLaneEditor: (lane: Lane) => void;
 		onOpenLaneInfo: (lane: Lane) => void;
 	};
@@ -140,6 +141,7 @@
 		itemForLane,
 		laneStyle,
 		laneDisplayWidth,
+		visibleBoothsForLane,
 		onOpenLaneEditor,
 		onOpenLaneInfo,
 	}: GridProps = $props();
@@ -165,7 +167,11 @@
 	);
 
 	function hasTightMultiBoothCells(lane: Lane): boolean {
-		return shouldStackMultiBoothActions(lane, laneDisplayWidth(lane));
+		return shouldStackMultiBoothActions(
+			lane,
+			laneDisplayWidth(lane),
+			visibleBoothsForLane(lane).length
+		);
 	}
 
 	function updateHorizontalScrollControls(): void {
@@ -266,8 +272,9 @@
 					>⌖</button>
 					{#if !compactActive}
 						{#each visibleLanes as lane (lane.id)}
+							{@const displayedLane = { ...lane, booths: visibleBoothsForLane(lane) }}
 							<LaneHeader
-								{lane}
+								lane={displayedLane}
 								style={laneStyle(lane)}
 								editing={editMode}
 								editLabel={t('edit')}
@@ -373,7 +380,7 @@
 											class="now-line"
 											style={`top:${minuteToY(nowMinute)}px`}
 										></div>{/if}
-										{#each itemForLane(lane.id) as item (item.id)}
+								{#each itemForLane(lane.id) as item (item.id)}
 											<ScheduleItemBlock
 												{item}
 												displayStartMinute={displayedItem(item).startMinute}
@@ -388,7 +395,7 @@
 												{formatMinute}
 												bottomLine={itemBottomLine(item)}
 												showBottomLine={shouldShowItemBottomLine(item)}
-											booths={lane.booths ?? []}
+											booths={visibleBoothsForLane(lane)}
 											tightMultiBooth={hasTightMultiBoothCells(lane)}
 												onCycleFavorite={() => cycleItem(item.id)}
 												onOpenRelated={() => openRelated(item)}
@@ -426,7 +433,7 @@
 						{#each visibleLanes as lane (lane.id)}
 							<div class="lane-header viewport-lane-header" style={laneStyle(lane)}>
 								<strong>{lane.name}</strong>
-								{#if lane.booths?.length}<small>{lane.booths.join(' · ')}</small>{/if}
+								{#if visibleBoothsForLane(lane).length}<small>{visibleBoothsForLane(lane).join(' · ')}</small>{/if}
 							</div>
 						{/each}
 					</div>

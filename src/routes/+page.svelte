@@ -306,6 +306,8 @@
 	);
 	const timetablePresentation = createTimetablePresentation(() => ({
 		items,
+		visibleItems: favoriteItems,
+		filterActive: favoriteFilter > 0,
 		preferences,
 		compactActive,
 		minuteToY,
@@ -318,6 +320,7 @@
 		displayedItem,
 		itemHasLimitedContent,
 		shouldShowItemBottomLine,
+		visibleBoothsForLane,
 		itemStyle,
 		laneStyle,
 		laneDisplayWidth
@@ -652,7 +655,7 @@
 					</details>
 				</section>{/if}
 			<TimetableGrid
-				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} onLaneWidthAdjust={adjustLaneWidth} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {displayedItem} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {selectedItemIds} {multiSelectEnabled} onToggleEdit={toggleEditMode} {openFestivalSettings} openOverlapSettings={() => (overlapPolicyOpen = true)} setMultiSelectEnabled={gridInteraction.setMultiSelectEnabled} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} {activateItem} {deleteItem} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth} setFavoriteFilter={setFavoriteFilter}
+				{day} {favoriteFilter} {favoriteItems} {items} {compactActive} {visibleColumns} {laneColumnTemplate} {gridHeight} {preferences} {gridRange} {visibleLanes} {t} {timeTicks} {minuteToY} {isToday} {nowMinute} handlePointerMove={gridInteraction.handlePointerMove} handlePointerUp={gridInteraction.handlePointerUp} {compactColumnCount} {addLaneId} beginCreate={gridInteraction.beginCreate} beginLaneReorder={gridInteraction.beginLaneReorder} setLaneReorderTarget={gridInteraction.setLaneReorderTarget} finishLaneReorder={gridInteraction.finishLaneReorder} moveLaneBy={gridInteraction.moveLaneBy} onLaneWidthAdjust={adjustLaneWidth} {reorderingLaneId} {reorderTargetLaneId} {compactItemsForColumn} {displayItem} {conflictIds} {itemStyle} {displayedItem} {itemHasLimitedContent} {itemBottomLine} {shouldShowItemBottomLine} {editMode} {selectedItemIds} {multiSelectEnabled} onToggleEdit={toggleEditMode} {openFestivalSettings} openOverlapSettings={() => (overlapPolicyOpen = true)} setMultiSelectEnabled={gridInteraction.setMultiSelectEnabled} undoCount={undoStack.length} redoCount={redoStack.length} {undo} {redo} startAdd={itemEditor.openNew} addLane={laneEditor.add} {formatMinute} {cycleItem} {openRelated} beginItemPointer={gridInteraction.beginItemPointer} openEditor={itemEditor.open} {activateItem} {deleteItem} changeItemBooth={changeItemBooth} {creating} {compactPreview} {itemForLane} {laneStyle} {laneDisplayWidth} {visibleBoothsForLane} setFavoriteFilter={setFavoriteFilter}
 				onOpenLaneEditor={laneEditor.open}
 				onOpenLaneInfo={(lane) => (infoLaneId = lane.id)}
 			/>

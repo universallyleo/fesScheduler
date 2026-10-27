@@ -27,6 +27,7 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
   - Duplication moves to the item editor's action row.
   - A multi-booth card in edit mode uses the final line for `終了時刻 [A/B/C select]`; it does not render the word `ブース` and does not use right-side action icons.
 - `表示設定` must render above the column headers and item cards.
+- While a favourite filter is active, a multi-booth 特典会 lane renders only booths with at least one remaining item. The active booths divide the whole displayed lane evenly; this is a display-only collapse and never changes the saved booth list or lane-width settings.
 
 ## Architecture
 
@@ -47,7 +48,7 @@ Make lane ordering and item movement predictable on touch and pointer devices, a
   - Return a presentable preview summary without mutating schedule state.
 - `src/lib/features/scheduler/timetable-presentation.ts`
   - Resolve inherited vs individual lane widths.
-  - Keep booth widths proportional to the resolved lane width.
+  - Keep booth widths proportional to the resolved lane width, using only active booths when favourite filtering is applied.
   - Calculate card stack levels, including the temporarily raised active dragged item.
 
 ### Interaction controller

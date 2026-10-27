@@ -25,6 +25,29 @@ describe('drag-time preview', () => {
 });
 
 describe('multi-booth item stacking', () => {
+	it('collapses filtered-out booths while preserving the active booth position', () => {
+		const boothLane: Lane = {
+			id: 'tokuten',
+			name: '特典会',
+			type: 'tokuten',
+			booths: ['A', 'B', 'C']
+		};
+		const active = { ...item, laneId: 'tokuten', boothId: 'B', favoriteLevel: 1 as const };
+		const presentation = createTimetablePresentation(() => ({
+			items: [active],
+			visibleItems: [active],
+			filterActive: true,
+			preferences: { language: 'ja', theme: 'light', snapMinutes: 5, timeZoom: 180, laneWidthMode: 'type', laneWidths: { stage: 140, tokuten: 140, event: 140 }, itemOverlapPolicy: 'allow', compactFavorites: false, blockColorMode: 'full' },
+			compactActive: false,
+			minuteToY: (minute) => minute,
+			laneForItem: () => boothLane,
+			itemBottomLine: () => ''
+		}));
+
+		expect(presentation.visibleBoothsForLane(boothLane)).toEqual(['B']);
+		expect(presentation.itemStyle(active)).toContain('width:calc((100% - 8px) * 1);');
+	});
+
 	it('gives every booth an equal non-overlapping horizontal slice', () => {
 		const boothLane: Lane = { id: 'tokuten', name: '特典会', type: 'tokuten', booths: ['A', 'B', 'C'] };
 		const presentation = createTimetablePresentation(() => ({

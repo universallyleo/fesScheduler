@@ -38,8 +38,11 @@ export function minimumLaneDisplayWidth(lane: Lane): number {
  * Stack the actions when a booth card cannot fit both `xx:xx` and its heart
  * control on the start-time row. The card itself remains percentage based.
  */
-export function shouldStackMultiBoothActions(lane: Lane, displayedLaneWidth: number): boolean {
-	const boothCount = lane.booths?.length ?? 0;
+export function shouldStackMultiBoothActions(
+	lane: Lane,
+	displayedLaneWidth: number,
+	boothCount = lane.booths?.length ?? 0
+): boolean {
 	return (
 		lane.type === 'tokuten' &&
 		boothCount > 1 &&
